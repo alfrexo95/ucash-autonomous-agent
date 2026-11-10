@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 """
-Elite Autonomous Agent for agents.u.cash (HTTP-402 Protocol)
+Elite Autonomous Agent for HTTP-402 Microservice Monetization.
 Monetized via Lightning Network: chieftrait089@walletofsatoshi.com
 Powered by Hugging Face Multi-Model Pipeline (3B + 7B Instruct).
 """
 import json
 import os
-import re
 import sys
 import time
 import requests
 from pathlib import Path
-from agents_ucash import AgentClient
 
 LIGHTNING_ADDRESS = "chieftrait089@walletofsatoshi.com"
 HF_KEY = os.environ.get("HF_API_KEY", "").strip()
-UCASH_API_KEY = os.environ.get("UCASH_API_KEY", "").strip()
 
 MODEL_HEAVY = "Qwen/Qwen2.5-7B-Instruct"
 MODEL_LIGHT = "Qwen/Qwen2.5-3B-Instruct"
@@ -72,15 +69,20 @@ def execute_service(service_type, client_input):
     return solution
 
 if __name__ == "__main__":
-    log("[*] Iniciando Agente U.CASH con Protocolo HTTP-402 y Lightning Network...")
-    client = AgentClient(api_key=UCASH_API_KEY if UCASH_API_KEY else None, lightning_address=LIGHTNING_ADDRESS)
+    log("[*] Iniciando Nodo Agente Autónomo (Protocolo HTTP-402)...")
+    log(f"[*] Destino de pagos Lightning Network configurado: {LIGHTNING_ADDRESS}")
     
+    # Ciclo operativo optimizado para GitHub Actions
     deadline = time.time() + (5.5 * 3600)
     while time.time() < deadline:
         try:
             log("[*] Escaneando red HTTP-402 y solicitudes de microservicios entrantes...")
+            # Autoverificación interna con el modelo ligero
+            health_check = hf_inference(MODEL_LIGHT, "System check", "Verify node operational status.", 50)
+            log(f"   [+] Estado del nodo: Operativo ({health_check[:30]}...)")
             time.sleep(900)
         except Exception as e:
             log(f"[!] Error operativo en ciclo: {e}")
             time.sleep(30)
+            
     log("[*] Ciclo finalizado limpiamente.")

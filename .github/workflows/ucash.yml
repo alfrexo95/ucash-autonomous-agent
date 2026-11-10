@@ -20,15 +20,10 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install requests duckduckgo-search agents-u-cash
-
-      - name: Verify Installation
-        run: |
-          python3 -c "import agents_ucash; print('agents_ucash installed successfully!')"
+          pip install requests duckduckgo-search
 
       - name: Run U.CASH Bot
         env:
           HF_API_KEY: ${{ secrets.HF_API_KEY }}
-          UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
         run: |
           python3 agent.py
