@@ -1,67 +1,77 @@
-#!/usr/init/env python3
+#!/usr/bin/env python3
 """
 Elite Autonomous Agent for HTTP-402 Microservice Monetization.
 Monetized via Lightning Network: chieftrait089@walletofsatoshi.com
-Powered by Hugging Face Inference API (Qwen/Qwen2.5-7B-Instruct).
+Powered by 100% Free Open-Source Python AI Library (Transformers + PyTorch).
 """
 import json
 import os
 import time
-import requests
 from pathlib import Path
+from transformers import pipeline
 
 LIGHTNING_ADDRESS = "chieftrait089@walletofsatoshi.com"
-HF_KEY = os.environ.get("HF_API_KEY", "").strip()
+MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
 
-# Usamos el modelo principal de 7B, altamente compatible con la API serverless
-MODEL_ENGINE = "Qwen/Qwen2.5-7B-Instruct"
+STATE_FILE = Path("ucash_state.json")
 
 def log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
-def hf_inference(system_prompt, user_prompt, max_tokens=1000):
-    if not HF_KEY:
-        raise RuntimeError("HF_API_KEY no configurado en el entorno.")
-    url = f"https://api-inference.huggingface.co/models/{MODEL_ENGINE}"
-    headers = {"Authorization": f"Bearer {HF_KEY}", "Content-Type": "application/json"}
-    payload = {
-        "inputs": f"System: {system_prompt}\nUser: {user_prompt}\nAssistant:",
-        "parameters": {"max_new_tokens": max_tokens, "temperature": 0.2, "return_full_text": False}
-    }
+log("[*] Inicializando motor de IA local de código abierto (Transformers)...")
+# Carga el modelo directamente en el entorno local de ejecución (CPU optimizado)
+try:
+    ai_generator = pipeline(
+        "text-generation",
+        model=MODEL_NAME,
+        device_map="cpu",
+        torch_dtype="auto"
+    )
+    log("[*] ¡Modelo de IA local cargado y listo para operar!")
+except Exception as e:
+    log(f"[!] Error al cargar el modelo local: {e}")
+    ai_generator = None
+
+def local_ai_inference(system_prompt, user_prompt, max_tokens=500):
+    if not ai_generator:
+        raise RuntimeError("El generador de IA local no está inicializado.")
     
-    for attempt in range(2):
-        try:
-            r = requests.post(url, headers=headers, json=payload, timeout=30)
-            log(f"[DEBUG] HF Status Code: {r.status_code}")
-            if r.status_code == 200:
-                data = r.json()
-                if isinstance(data, list) and len(data) > 0:
-                    return str(data[0].get("text", "") or data[0].get("generated_text", "")).strip()
-                elif isinstance(data, dict):
-                    return str(data.get("generated_text", "") or data.get("text", "")).strip()
-            elif r.status_code == 503:
-                time.sleep(5)
-                continue
-            else:
-                log(f"[DEBUG] HF Response: {r.text[:300]}")
-        except Exception as e:
-            log(f"[DEBUG] Excepción HTTP: {e}")
-        time.sleep(2)
-    raise RuntimeError(f"Fallo de conexión con Hugging Face [{MODEL_ENGINE}]")
+    prompt = f"System: {system_prompt}\nUser: {user_prompt}\nAssistant:"
+    
+    outputs = ai_generator(
+        prompt,
+        max_new_tokens=max_tokens,
+        temperature=0.2,
+        do_sample=True,
+        return_full_text=False
+    )
+    return outputs[0]['generated_text'].strip()
+
+def execute_service(service_type, client_input):
+    log(f"[*] Procesando servicio de alta demanda [{service_type}] con IA local...")
+    if service_type == "code_audit":
+        sys_prompt = "You are an elite cybersecurity and smart contract auditor. Provide deep, secure code reviews and vulnerability fixes."
+    elif service_type == "data_scraping":
+        sys_prompt = "You are an advanced data synthesis agent. Format requested data points into clean JSON or Markdown tables."
+    else:
+        sys_prompt = "You are an expert AI prompt engineer. Refine and optimize advanced agent prompts."
+
+    solution = local_ai_inference(sys_prompt, client_input, 800)
+    return solution
 
 if __name__ == "__main__":
     log("[*] Iniciando Nodo Agente Autónomo (Protocolo HTTP-402)...")
     log(f"[*] Destino de pagos Lightning Network configurado: {LIGHTNING_ADDRESS}")
     
-    # Prueba inicial de conectores con Hugging Face
-    try:
-        log("[*] Verificando enlace con Hugging Face AI...")
-        test_res = hf_inference("System check", "Verify node operational status in one sentence.", 50)
-        log(f"   [+] IA Respondió con éxito: {test_res}")
-    except Exception as e:
-        log(f"   [!] Advertencia inicial de IA: {e}")
+    if ai_generator:
+        try:
+            log("[*] Verificando capacidades de razonamiento local...")
+            test_res = local_ai_inference("System check", "Confirm operational status in 5 words.", 30)
+            log(f"   [+] IA Local Respondió: {test_res}")
+        except Exception as e:
+            log(f"   [!] Advertencia en prueba local: {e}")
 
-    # Ciclo operativo continuo en la nube
+    # Ciclo operativo continuo en la nube (GitHub Actions)
     deadline = time.time() + (5.5 * 3600)
     while time.time() < deadline:
         try:
