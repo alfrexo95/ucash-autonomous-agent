@@ -1,194 +1,216 @@
 #!/usr/bin/env python3
 """
-Elite Multi-Chain Autonomous Agent with Persistent Memory, Ledger & Real-Time Services.
-Lightning: chieftrait089@walletofsatoshi.com
-Bitcoin: bc1qt3rukpe7qp737zj5j5xpxxmcqv90cfefhg5e00
-Ethereum: 0xA5E6eB31868A85127B1ED82b8C760193356206ED
-Powered by 100% Free Open-Source Python AI Library (Transformers) & Live DuckDuckGo Engine.
+U.CASH Agent v2 - vende servicios de IA y cobra de verdad via HTTP 402 (agents.u.cash / pay.u.cash).
+
+Cambios clave respecto a la v1:
+  * El ledger YA NO inventa ingresos: solo se acredita lo que U.CASH reporta como liquidado (status "C").
+  * Cada pago se procesa una sola vez (dedupe por id de transaccion).
+  * Cada recurso (res_id) vendible esta ligado a un servicio y un precio.
+  * La entrega queda guardada en deliveries/<tx_id>.md.
+  * Todas las credenciales vienen de variables de entorno (GitHub Secrets), nada hardcodeado.
+
+Requisitos (pip): agents-u-cash ddgs transformers torch
+Secrets / env:  UCASH_API_KEY (obligatorio), MODEL_NAME (opcional), RUN_HOURS (opcional)
 """
 import json
 import os
 import time
-import hashlib
+import traceback
 from pathlib import Path
+
+from agents_u_cash import AgentsUCash
+
+try:
+    from ddgs import DDGS  # paquete actual
+except ImportError:  # compatibilidad con el nombre viejo
+    from duckduckgo_search import DDGS
+
 from transformers import pipeline
-from duckduckgo_search import DDGS
 
-# Direcciones de Cobro Multi-Cadena
-LIGHTNING_ADDRESS = "chieftrait089@walletofsatoshi.com"
-BTC_ADDRESS = "bc1qt3rukpe7qp737zj5j5xpxxmcqv90cfefhg5e00"
-ETH_ADDRESS = "0xA5E6eB31868A85127B1ED82b8C760193356206ED"
+# ------------------------------------------------------------------ CONFIG
+API_KEY = os.environ.get("UCASH_API_KEY", "")
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-1.5B-Instruct")
+RUN_HOURS = float(os.environ.get("RUN_HOURS", "5.5"))
+POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "120"))
 
-MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
 STATE_FILE = Path("ucash_state.json")
+DELIVERIES = Path("deliveries")
+INBOX = Path("inbox")  # el cliente deja aqui <tx_id>.txt o <res_id>.txt con su pedido
+DELIVERIES.mkdir(exist_ok=True)
+INBOX.mkdir(exist_ok=True)
+
+# Catalogo: servicio -> precio en USD. Se crea un recurso 402 por cada uno.
+CATALOG = {
+    "prompt_engineering": {"price": 2.0, "title": "Prompt Engineering"},
+    "code_audit": {"price": 5.0, "title": "Auditoria de codigo / smart contracts"},
+    "data_research": {"price": 3.0, "title": "Investigacion web verificada"},
+}
+
 
 def log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
-# ---------------------------------------------------------------- GESTIÓN DE MEMORIA Y CONTABILIDAD (LEDGER)
+
+# ------------------------------------------------------------------ ESTADO / LEDGER
 def load_state():
     if STATE_FILE.exists():
         try:
-            with open(STATE_FILE, "r") as f:
-                return json.load(f)
+            return json.loads(STATE_FILE.read_text())
         except Exception:
             pass
-    return {
-        "balances": {"lightning_sats": 0, "btc_satoshis": 0, "eth_wei": 0},
-        "completed_tasks": [],
-        "transaction_history": []
-    }
+    return {"resources": {}, "processed_tx": [], "earnings_usd": 0.0, "history": []}
+
 
 def save_state(state):
+    STATE_FILE.write_text(json.dumps(state, indent=2))
+
+
+# ------------------------------------------------------------------ IA LOCAL
+log(f"Cargando modelo {MODEL_NAME} ...")
+generator = pipeline("text-generation", model=MODEL_NAME, device_map="cpu", dtype="auto")
+
+
+def ask(system, user, max_tokens=900):
+    msgs = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    out = generator(msgs, max_new_tokens=max_tokens, temperature=0.2, do_sample=True)
+    return out[0]["generated_text"][-1]["content"].strip()
+
+
+# ------------------------------------------------------------------ SERVICIOS
+def web_search(query, n=5):
+    rows = []
     try:
-        with open(STATE_FILE, "w") as f:
-            json.dump(state, f, indent=4)
+        with DDGS() as d:
+            for r in d.text(query, max_results=n):
+                rows.append({"title": r.get("title"), "snippet": r.get("body"), "url": r.get("href")})
     except Exception as e:
-        log(f"[!] Error guardando estado: {e}")
+        log(f"busqueda fallo: {e}")
+    return rows
 
-def record_earning(chain, amount, task_description):
-    state = load_state()
-    if chain == "lightning":
-        state["balances"]["lightning_sats"] += amount
-    elif chain == "btc":
-        state["balances"]["btc_satoshis"] += amount
-    elif chain == "eth":
-        state["balances"]["eth_wei"] += amount
-    
-    state["transaction_history"].append({
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "chain": chain,
-        "amount": amount,
-        "description": task_description
-    })
-    save_state(state)
-    log(f"[CONTABILIDAD] Ingreso registrado: +{amount} en [{chain.upper()}]. Balance actualizado.")
 
-# ---------------------------------------------------------------- INICIALIZACIÓN DE IA LOCAL
-log("[*] Inicializando motor de IA local de código abierto (Transformers)...")
-try:
-    ai_generator = pipeline(
-        "text-generation",
-        model=MODEL_NAME,
-        device_map="cpu",
-        torch_dtype="auto"
+def svc_prompt_engineering(order):
+    return ask(
+        "You are an expert prompt engineer. Produce a production-ready system prompt: role, "
+        "constraints, steps, output format, and 2 examples. Match the language of the request.",
+        order,
     )
-    log("[*] ¡Modelo de IA local cargado con éxito!")
-except Exception as e:
-    log(f"[!] Error al cargar el modelo local: {e}")
-    ai_generator = None
 
-def local_ai_inference(system_prompt, user_prompt, max_tokens=800):
-    if not ai_generator:
-        raise RuntimeError("El generador de IA local no está inicializado.")
-    prompt = f"System: {system_prompt}\nUser: {user_prompt}\nAssistant:"
-    outputs = ai_generator(
-        prompt,
-        max_new_tokens=max_tokens,
-        temperature=0.2,
-        do_sample=True,
-        return_full_text=False
+
+def svc_code_audit(order):
+    return ask(
+        "You are a security auditor for Python/Solidity. List vulnerabilities by severity, explain "
+        "each briefly, and give corrected code. Do not invent issues that are not in the code.",
+        order,
+        1200,
     )
-    return outputs[0]['generated_text'].strip()
 
-# ---------------------------------------------------------------- LÓGICA REAL DE LOS 3 SERVICIOS DEMANDADOS
-def execute_code_audit(code_snippet):
-    log("[*] Ejecutando servicio real: Auditoría de Código y Smart Contracts...")
-    sys_prompt = "You are an elite cybersecurity and smart contract auditor. Analyze the provided code for vulnerabilities, security flaws, gas optimizations, and provide secure, production-grade fixes in English."
-    result = local_ai_inference(sys_prompt, code_snippet, 1000)
-    return result
 
-def execute_data_scraping_and_verification(query):
-    log(f"[*] Ejecutando servicio real: Scraping y Verificación en línea para '{query}'...")
-    scraped_data = []
-    try:
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=3))
-            for r in results:
-                scraped_data.append({
-                    "title": r.get("title"),
-                    "snippet": r.get("body"),
-                    "link": r.get("href")
-                })
-    except Exception as e:
-        log(f"[i] Nota en búsqueda online: {e}")
-    
-    context = f"Online Search Results for query '{query}':\n" + json.dumps(scraped_data, indent=2)
-    sys_prompt = "You are an advanced data synthesis agent. Structure, clean, verify facts, and format the scraped online data into a professional Markdown report."
-    result = local_ai_inference(sys_prompt, context, 1000)
-    return result
+def svc_data_research(order):
+    sources = web_search(order)
+    ctx = json.dumps(sources, ensure_ascii=False, indent=2)
+    report = ask(
+        "You write factual Markdown reports using ONLY the sources provided. Cite each claim with "
+        "its URL. If sources are insufficient, say so.",
+        f"Topic: {order}\n\nSources:\n{ctx}",
+        1000,
+    )
+    return report + "\n\n## Fuentes\n" + "\n".join(f"- {s['url']}" for s in sources)
 
-def execute_prompt_engineering(user_prompt_goal):
-    log("[*] Ejecutando servicio real: Optimización de Prompts y Arquitectura...")
-    sys_prompt = "You are an expert AI prompt engineer. Take the user's objective and craft an advanced, highly structured, production-ready system prompt with constraints, role definition, and output formatting rules."
-    result = local_ai_inference(sys_prompt, user_prompt_goal, 800)
-    return result
 
-# ---------------------------------------------------------------- CONTROLADOR DE TAREAS Y DUPLICADOS
-def process_task(task_id, service_type, payload, chain_reward="lightning", reward_amount=500):
-    state = load_state()
-    
-    # Memoria: Comprobar si la tarea ya fue procesada para no repetir acciones
-    if task_id in state["completed_tasks"]:
-        log(f"[MEMORIA] Tarea {task_id} ya fue completada anteriormente. Omitiendo.")
-        return None
+HANDLERS = {
+    "prompt_engineering": svc_prompt_engineering,
+    "code_audit": svc_code_audit,
+    "data_research": svc_data_research,
+}
 
-    log(f"[*] Procesando nueva tarea [{task_id}] de tipo [{service_type}]...")
-    
-    # Ejecutar la lógica correspondiente
-    if service_type == "code_audit":
-        output = execute_code_audit(payload)
-    elif service_type == "data_scraping":
-        output = execute_data_scraping_and_verification(payload)
-    elif service_type == "prompt_engineering":
-        output = execute_prompt_engineering(payload)
-    else:
-        output = "Servicio desconocido."
 
-    # Registrar en memoria como completada
-    state["completed_tasks"].append(task_id)
+# ------------------------------------------------------------------ U.CASH
+def as_list(resp):
+    """El SDK puede devolver lista o {'response': [...]}; normalizamos."""
+    if isinstance(resp, dict):
+        resp = resp.get("response", resp.get("transactions", []))
+    return resp if isinstance(resp, list) else []
+
+
+def ensure_resources(agent, state):
+    """Crea un recurso 402 por servicio (una sola vez) y guarda su checkout_url."""
+    for name, cfg in CATALOG.items():
+        if name in state["resources"]:
+            continue
+        try:
+            res = agent.create_resource(amount=cfg["price"], title=cfg["title"])
+        except TypeError:  # versiones del SDK sin title
+            res = agent.create_resource(amount=cfg["price"])
+        res = res.get("response", res) if isinstance(res, dict) else res
+        state["resources"][name] = {"res_id": res["res_id"], "checkout_url": res["checkout_url"]}
+        log(f"Recurso creado: {name} -> {res['checkout_url']}")
     save_state(state)
 
-    # Registrar ingreso económico en la red correspondiente
-    record_earning(chain_reward, reward_amount, f"Completado {service_type} (Task ID: {task_id})")
-    
-    return output
 
+def service_for_res(state, res_id):
+    for name, r in state["resources"].items():
+        if r["res_id"] == res_id:
+            return name
+    return None
+
+
+def read_order(tx):
+    """Pedido del cliente: descripcion del pago o archivo inbox/<tx_id>.txt / inbox/<res_id>.txt."""
+    for key in (str(tx.get("id")), str(tx.get("res_id"))):
+        p = INBOX / f"{key}.txt"
+        if p.exists():
+            return p.read_text().strip()
+    return (tx.get("description") or "").strip()
+
+
+def process_settled(agent, state):
+    txs = as_list(agent.get_transactions(status="C", limit=100))
+    for tx in txs:
+        tx_id = str(tx.get("id"))
+        if tx_id in state["processed_tx"]:
+            continue
+        service = service_for_res(state, tx.get("res_id"))
+        if not service:
+            continue  # pago de otro recurso, no es de este bot
+        order = read_order(tx)
+        if not order:
+            log(f"[tx {tx_id}] pagada pero sin pedido; queda pendiente de inbox/{tx_id}.txt")
+            continue
+        log(f"[tx {tx_id}] entregando '{service}' ...")
+        try:
+            output = HANDLERS[service](order)
+        except Exception:
+            log(traceback.format_exc())
+            continue
+        (DELIVERIES / f"{tx_id}.md").write_text(f"# {service}\n\nPedido:\n{order}\n\n---\n\n{output}\n")
+        fiat = float(tx.get("amount_fiat") or 0)
+        state["processed_tx"].append(tx_id)
+        state["earnings_usd"] = round(state["earnings_usd"] + fiat, 2)
+        state["history"].append({
+            "tx": tx_id, "service": service, "usd": fiat,
+            "asset": tx.get("asset"), "settled_at": tx.get("settled_at"),
+        })
+        save_state(state)
+        log(f"[tx {tx_id}] entregado. Ingresos liquidados acumulados: ${state['earnings_usd']}")
+
+
+# ------------------------------------------------------------------ MAIN
 if __name__ == "__main__":
-    log("[*] Iniciando Nodo Agente Autónomo Multi-Cadena con Memoria y Lógica Real...")
-    log(f"   [+] Lightning: {LIGHTNING_ADDRESS}")
-    log(f"   [+] Bitcoin: {BTC_ADDRESS}")
-    log(f"   [+] Ethereum: {ETH_ADDRESS}")
-    
-    # Mostrar estado de la memoria al arrancar
-    current_state = load_state()
-    log(f"   [+] Balance actual en memoria: {current_state['balances']}")
-    log(f"   [+] Tareas históricas completadas: {len(current_state['completed_tasks'])}")
+    if not API_KEY:
+        raise SystemExit("Falta UCASH_API_KEY (agregalo en GitHub > Settings > Secrets).")
+    agent = AgentsUCash(api_key=API_KEY)
+    state = load_state()
+    ensure_resources(agent, state)
 
-    # Ciclo operativo continuo en la nube (GitHub Actions)
-    deadline = time.time() + (5.5 * 3600)
+    log("Catalogo activo (comparte estos enlaces para cobrar):")
+    for name, r in state["resources"].items():
+        log(f"  {name}: ${CATALOG[name]['price']} -> {r['checkout_url']}")
+
+    deadline = time.time() + RUN_HOURS * 3600
     while time.time() < deadline:
         try:
-            log("[*] Escaneando red HTTP-402, U.CASH y órdenes en busca de microtareas...")
-            
-            # Simulación o prueba de procesamiento con memoria activa
-            sample_task_id = hashlib.sha256(f"task_{int(time.time() // 3600)}".encode()).hexdigest()[:10]
-            
-            # Ejemplo de ejecución autogestionada si encuentra una orden de optimización de prompt
-            res = process_task(
-                task_id=sample_task_id,
-                service_type="prompt_engineering",
-                payload="Create a smart contract monitoring bot in Python",
-                chain_reward="lightning",
-                reward_amount=400
-            )
-            
-            if res:
-                log(f"   [+] Tarea ejecutada y liquidada correctamente. Salida generada: {res[:100]}...")
-
-            time.sleep(1800) # Pausa de 30 minutos entre ciclos de escaneo inteligente
-        except Exception as e:
-            log(f"[!] Error operativo en ciclo: {e}")
-            time.sleep(30)
-            
-    log("[*] Ciclo finalizado limpiamente.")
+            process_settled(agent, state)
+        except Exception:
+            log(traceback.format_exc())
+        time.sleep(POLL_SECONDS)
+    log("Ciclo finalizado.")
