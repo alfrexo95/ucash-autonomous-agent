@@ -21,84 +21,37 @@ jobs:
       - name: Install U.CASH SDK
         run: python -m pip install --disable-pip-version-check agents-u-cash==0.9.0
 
-      - name: Configure BTC and ETH only
+      - name: Inspect payment acceptance
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
         run: |
           python - <<'PYTHON'
           import os
+          import json
           from agents_u_cash import AgentsUCash
 
           client = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
-          data = client._request(
-              "GET", "/v1/wallets", query={"all": 1}
-          )
 
-          wallets = data.get("wallets")
-          if isinstance(wallets, dict):
-              assets = list(wallets.keys())
-          elif isinstance(wallets, list):
-              assets = [
-                  item["asset"] for item in wallets
-                  if isinstance(item, dict) and item.get("asset")
-              ]
-          else:
-              raise RuntimeError("Formato de wallets no reconocido")
+          resources = client.get_resources().get("resources", [])
 
-          targets = {"btc", "eth"}
-          assets = sorted(set(str(a).lower() for a in assets))
+          for r in resources:
+              rid = r.get("res_id") or r.get("id")
+              print("\\nRESOURCE:", rid)
+              print("ACCEPTED_ASSETS:", r.get("accepted_assets"))
 
-          if not targets.issubset(set(assets)):
-              raise RuntimeError(
-                  "No aparecen las dos wallets BTC y ETH. "
-                  "No se modificó ninguna moneda."
-              )
+              door = client.get_payment_required(rid)
 
-          print("Monedas encontradas:", ", ".join(assets))
+              print("DOOR_STATUS:", door.get("status"))
+              print("ACCEPTS_TYPE:", type(door.get("accepts")).__name__)
+              print("ACCEPTS:")
+              print(json.dumps(
+                  door.get("accepts"),
+                  indent=2,
+                  default=str
+              ))
 
-          for asset in assets:
-              active = asset in targets
-              result = client._request(
-                  "PUT",
-                  "/v1/wallets",
-                  body={"active": active},
-                  query={"asset": asset}
-              )
-              print("WALLET:", asset, "ACTIVA" if active else "PAUSADA")
-
-          resources_data = client.get_resources()
-          resources = resources_data.get("resources", [])
-
-          expected = {
-              "res_chk_7378_1_bebf3e82441c",
-              "res_chk_7378_2_bdecf5333a3e",
-              "res_chk_7378_3_1fa62a3332e2",
-          }
-
-          found = {
-              r.get("res_id") or r.get("id")
-              for r in resources
-          }
-
-          if not expected.issubset(found):
-              raise RuntimeError("No se encontraron los tres servicios existentes")
-
-          for resource_id in sorted(expected):
-              door = client.get_payment_required(resource_id)
-              accepts = door.get("accepts", [])
-              offered = sorted({
-                  str(item.get("asset", "")).lower()
-                  for item in accepts
-                  if isinstance(item, dict) and item.get("asset")
-              })
-
-              print("RECURSO:", resource_id)
-              print("ACTIVOS OFRECIDOS:", offered)
-
-              if set(offered) != targets:
-                  raise RuntimeError(
-                      "La puerta de pago no ofrece exactamente BTC y ETH"
-                  )
-
-          print("VERIFICACION FINAL: BTC y ETH exclusivamente.")
+              required = door.get("payment_required")
+              print("PAYMENT_REQUIRED_TYPE:", type(required).__name__)
+              if isinstance(required, dict):
+                  print("PAYMENT_REQUIRED_KEYS:", sorted(required.keys()))
           PYTHON
