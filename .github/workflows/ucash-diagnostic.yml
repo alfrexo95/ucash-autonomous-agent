@@ -1,4 +1,4 @@
-name: Predator U.CASH - API Diagnostic
+name: Predator U.CASH - Payment Data Inspection
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  diagnostic:
+  inspect:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -18,40 +18,43 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install U.CASH SDK
-        run: python -m pip install --disable-pip-version-check agents-u-cash==0.9.0
+      - name: Install SDK
+        run: pip install --disable-pip-version-check agents-u-cash==0.9.0
 
-      - name: Inspect payment acceptance
+      - name: Inspect transactions and settlements
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
         run: |
-          python - <<'PYTHON'
+          python - <<'PY'
           import os
           import json
           from agents_u_cash import AgentsUCash
 
           client = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
 
-          resources = client.get_resources().get("resources", [])
+          def inspect(label, result):
+              print("\n==========", label, "==========")
+              print("TYPE:", type(result).__name__)
 
-          for r in resources:
-              rid = r.get("res_id") or r.get("id")
-              print("\\nRESOURCE:", rid)
-              print("ACCEPTED_ASSETS:", r.get("accepted_assets"))
+              if isinstance(result, dict):
+                  print("TOP LEVEL KEYS:", list(result.keys()))
 
-              door = client.get_payment_required(rid)
+                  for key, value in result.items():
+                      if isinstance(value, list):
+                          print("\nLIST:", key, "COUNT:", len(value))
+                          for item in value[:3]:
+                              if isinstance(item, dict):
+                                  print("RECORD KEYS:", list(item.keys()))
+                                  print("SAMPLE:", json.dumps(
+                                      item, indent=2, default=str
+                                  )[:5000])
+                              else:
+                                  print("ITEM:", str(item)[:1000])
+                      elif not isinstance(value, (dict, list)):
+                          print(key, "=", str(value)[:300])
+              else:
+                  print(str(result)[:5000])
 
-              print("DOOR_STATUS:", door.get("status"))
-              print("ACCEPTS_TYPE:", type(door.get("accepts")).__name__)
-              print("ACCEPTS:")
-              print(json.dumps(
-                  door.get("accepts"),
-                  indent=2,
-                  default=str
-              ))
-
-              required = door.get("payment_required")
-              print("PAYMENT_REQUIRED_TYPE:", type(required).__name__)
-              if isinstance(required, dict):
-                  print("PAYMENT_REQUIRED_KEYS:", sorted(required.keys()))
-          PYTHON
+          inspect("TRANSACTIONS", client.get_transactions(limit=5))
+          inspect("SETTLEMENTS", client.get_settlements())
+          PY
