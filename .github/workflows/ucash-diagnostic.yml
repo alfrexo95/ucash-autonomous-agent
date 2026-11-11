@@ -12,73 +12,59 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install U.CASH SDK
-        run: |
-          python -m pip install --disable-pip-version-check agents-u-cash==0.9.0
+        run: python -m pip install --disable-pip-version-check agents-u-cash==0.9.0
 
-      - name: Inspect U.CASH endpoints
+      - name: Inspect payment structures
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
         run: |
-          if [ -z "$UCASH_API_KEY" ]; then
-            echo "ERROR: UCASH_API_KEY is not configured."
-            exit 1
-          fi
-
           python - <<'PY'
           import os
           from agents_u_cash import AgentsUCash
 
           client = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
 
-          def inspect_result(label, function):
-              print("\n==========", label, "==========")
+          SAFE = {
+              "id", "res_id", "resource_id", "checkout_id",
+              "transaction_id", "settlement_id", "name",
+              "status", "state", "payment_status",
+              "amount", "price", "currency", "asset",
+              "cryptocurrency", "network", "created_at",
+              "updated_at", "settled_at", "type",
+              "accepted_assets"
+          }
+
+          def inspect(label, fn, collection):
+              print(f"\n===== {label} =====")
               try:
-                  result = function()
-                  print("SUCCESS")
-                  print("TYPE:", type(result).__name__)
+                  result = fn()
+                  rows = result.get(collection, []) if isinstance(result, dict) else []
+                  print("RESULT KEYS:", sorted(result.keys()) if isinstance(result, dict) else type(result).__name__)
+                  print("RECORD COUNT:", len(rows) if isinstance(rows, list) else "not a list")
 
-                  if isinstance(result, dict):
-                      print("KEYS:", sorted(result.keys()))
-                      for key, value in result.items():
-                          print(
-                              key,
-                              "=>",
-                              type(value).__name__,
-                              "length:",
-                              len(value) if isinstance(value, (list, dict)) else "-"
-                          )
-
-                  elif isinstance(result, list):
-                      print("ITEMS:", len(result))
-                      if result and isinstance(result[0], dict):
-                          print("FIRST ITEM KEYS:", sorted(result[0].keys()))
-
+                  if isinstance(rows, list):
+                      for index, row in enumerate(rows[:5]):
+                          if not isinstance(row, dict):
+                              continue
+                          print(f"\nRECORD {index + 1} FIELDS:", sorted(row.keys()))
+                          for key, value in row.items():
+                              if key in SAFE and isinstance(value, (str, int, float, bool, list)):
+                                  print(f"{key}: {value}")
+                              elif "email" in key.lower():
+                                  print(f"{key}: PRESENT" if value else f"{key}: EMPTY")
               except Exception as error:
                   print("FAILED:", type(error).__name__)
                   print("STATUS:", getattr(error, "status", None))
                   print("ERROR CODE:", getattr(error, "code", None))
 
-          inspect_result(
-              "RESOURCES",
-              lambda: client.get_resources()
-          )
-
-          inspect_result(
-              "TRANSACTIONS",
-              lambda: client.get_transactions(limit=5)
-          )
-
-          inspect_result(
-              "SETTLEMENTS",
-              lambda: client.get_settlements()
-          )
+          inspect("RESOURCES", client.get_resources, "resources")
+          inspect("TRANSACTIONS", lambda: client.get_transactions(limit=10), "transactions")
+          inspect("SETTLEMENTS", client.get_settlements, "settlements")
           PY
