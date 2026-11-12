@@ -1,6 +1,9 @@
 import json, os, traceback, urllib.request, uuid
 from pathlib import Path
 from agents_u_cash import AgentsUCash
+import sys
+sys.path.append('..')
+from core_logic import get_hash, get_cache, set_cache, robust_download, validate_python, validate_solidity
 
 API_KEY = os.environ.get("UCASH_API_KEY", "")
 STATE_FILE = Path("ucash_state.json")

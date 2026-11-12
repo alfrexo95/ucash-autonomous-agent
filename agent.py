@@ -19,6 +19,7 @@ import traceback
 from pathlib import Path
 
 from agents_u_cash import AgentsUCash
+from core_logic import get_hash, get_cache, set_cache, validate_python
 
 try:
     from ddgs import DDGS  # paquete actual
@@ -95,6 +96,19 @@ def web_search(query, n=5):
         log(f"busqueda fallo: {e}")
     return rows
 
+
+def svc_automation_builder(order):
+    cache_key = get_hash(order)
+    cached = get_cache(cache_key)
+    if cached: return cached["md"]
+    
+    # Simulamos generación de código
+    code = "def run():\n    print('hello')" # Aquí iría tu modelo
+    is_valid, msg = validate_python(code)
+    
+    result = f"## Automation Builder\n\nValidation: {msg}\n\n```python\n{code}\n```"
+    set_cache(cache_key, {"md": result})
+    return result
 
 def svc_prompt_engineering(order):
     return ask(
