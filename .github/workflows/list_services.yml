@@ -1,0 +1,30 @@
+name: List U.CASH Services
+on: workflow_dispatch
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install agents-u-cash
+      - name: Query U.CASH
+        env:
+          UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
+        run: |
+          python - << 'PY'
+          import os
+          from agents_u_cash import AgentsUCash
+          agent = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
+          resp = agent.get_resources()
+          items = resp.get("response", resp) if isinstance(resp, dict) else resp
+          print(f"\n=== TIENES {len(items)} SERVICIOS EN VIVO EN U.CASH ===\n")
+          for res in items:
+              print(f"SERVICIO: {res.get('title', 'Sin titulo')}")
+              print(f"  ID: {res.get('res_id')}")
+              print(f"  Precio: ${res.get('amount')} USD")
+              print(f"  Link: {res.get('checkout_url', '')[:80]}...")
+              print("-" * 50)
+          PY
