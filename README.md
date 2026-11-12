@@ -1,62 +1,32 @@
-# Predator U.CASH Agent Elite (starter)
+# 🦅 Predator U.CASH Autonomous Agent
 
-Python stdlib HTTP server + official zero-dependency `agents-u-cash` SDK.
+An advanced, multi-modal AI agent system designed for the **x402 Agentic Economy**. 
+It sells 11 distinct AI services autonomously, processes payments in crypto (BTC, ETH, USDC), and executes local inference (PyTorch/TensorFlow) without any external paid AI APIs.
 
-## Important status
-This starter creates genuine U.CASH checkout resources and exposes a service catalog.
-It **does not claim a payment has settled**, and it does not release paid deliverables yet.
-Do not advertise fulfillment as automatic until a settlement verifier/webhook handler is
-implemented and tested against U.CASH's current event schema. U.CASH payment is non-custodial:
-settlements go to your configured wallet; the platform is not a wallet balance.
+## 🚀 Live Services
+View the full interactive catalog and buy services directly at:
+👉 **[Landing Page](https://alfrexo95.github.io/ucash-autonomous-agent/)**
 
-## Setup (Termux)
-```bash
-pkg update && pkg install python git
-git clone YOUR_REPO_URL predator-ucash-agent
-cd predator-ucash-agent
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-cp .env.example .env
-```
-Set secrets in shell (do not commit `.env`):
-```bash
-export UCASH_API_KEY='uxc_...'
-python setup_ucash.py
-python agent.py
-```
-Check:
-```bash
-curl http://127.0.0.1:8080/health
-curl http://127.0.0.1:8080/catalog
-curl -X POST http://127.0.0.1:8080/order \
- -H 'Content-Type: application/json' \
- -d '{"service":"Predator Code Analyzer","task":"Analyze this Python code"}'
-```
-The response includes a real checkout URL. A created checkout/resource is not proof of payment.
+For AI Agents looking for the OpenAPI schema:
+👉 **[OpenAPI JSON](https://predator-x402-proxy.alfrexo95.workers.dev/openapi.json)**
 
-## Services
-- `code_review` — automated code review/triage (not formal audit)
-- `research` — evidence-based research (baseline currently requires supplied sources)
-- `prompt_engineering` — prompts and automation plans
+## 🧠 The 11 AI Services
+1. **PromptForge Studio** ($2) - Expert Prompt Engineering
+2. **Sentinel Code Review** ($5) - Python & Solidity Security Audit
+3. **DeepIntel Research** ($3) - Verified Web Research
+4. **TextLens OCR** ($1) - Image to Text Extraction
+5. **EmotionPulse Analyzer** ($2) - Sentiment & Emotion Analysis
+6. **VisionTag Classifier** ($2) - Image Classification
+7. **Polyglot Bridge** ($3) - Multi-Language Translation
+8. **BriefCraft Summarizer** ($4) - Document Summarization
+9. **EchoScript Transcriber** ($6) - Audio to Text
+10. **ObjectScope Detector** ($8) - Image Object Detection
+11. **ChainGuard Auditor** ($20) - Deep Smart Contract Audit
 
-## GitHub Actions
-Use Actions for scheduled maintenance, smoke tests, or catalog/resource provisioning—not a
-permanent HTTP server. GitHub-hosted runners are ephemeral and stop after the job. Add
-`UCASH_API_KEY` as a repository Actions secret; never put it in YAML or logs.
+## ⚙️ Architecture
+- **Payment Processing**: U.CASH (HTTP 402 protocol)
+- **Webhook Router**: Cloudflare Worker (Zero-latency triggers)
+- **Execution Engine**: GitHub Actions (Ephemeral, CPU-optimized)
+- **AI Models**: HuggingFace Transformers & TensorFlow (Local, private, zero-cost API)
 
-## Production checklist before launch
-1. Configure wallet and verify accepted asset in U.CASH dashboard.
-2. Confirm SDK methods/response shape against the installed package and official API.
-3. Implement settlement verification from `GET /v1/settlements` or signed webhook.
-4. Persist raw settlement IDs and deduplicate (unique DB key).
-5. Only after verified settlement, execute job and make result available via expiring,
-   authenticated delivery URL.
-6. Add rate limits, payload limits, privacy/retention controls, isolated code execution
-   (never run customer code in the server process), and LLM backend with budget caps.
-7. Test sandbox first; do not expose public server without TLS/reverse proxy and auth.
-
-## Termux bootstrap
-Run `bash termux_setup.sh`; prompts securely for account credentials and saves API key in
-`~/.ucash_api_key` mode 600. Heavy packages in requirements-heavy.txt install only in
-GitHub Actions when manually dispatched with `mode=heavy_ai`. Actions runners are ephemeral,
-not persistent AI hosting; large model downloads can exceed runtime/cache limits.
+*Note: The API keys and wallets are securely managed via GitHub Secrets and Cloudflare Environment Variables. Cloning this repository does not expose any private credentials.*
