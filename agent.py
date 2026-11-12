@@ -227,6 +227,7 @@ if __name__ == "__main__":
     agent = AgentsUCash(api_key=API_KEY)
     state = load_state()
     ensure_resources(agent, state)
+    fill_missing_checkout_urls(agent, state)
 
     log("Catalogo activo (comparte estos enlaces para cobrar):")
     for name, r in state["resources"].items():
