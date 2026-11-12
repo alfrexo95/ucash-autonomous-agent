@@ -1,8 +1,17 @@
 {
   "resources": {
-    "prompt_engineering": {"res_id": "res_chk_7378_1_bebf3e82441c", "checkout_url": ""},
-    "code_audit":         {"res_id": "res_chk_7378_2_bdecf5333a3e", "checkout_url": ""},
-    "data_research":      {"res_id": "res_chk_7378_3_1fa62a3332e2", "checkout_url": ""}
+    "prompt_engineering": {
+      "res_id": "res_chk_7378_1_bebf3e82441c",
+      "checkout_url": ""
+    },
+    "code_audit": {
+      "res_id": "res_chk_7378_2_bdecf5333a3e",
+      "checkout_url": ""
+    },
+    "data_research": {
+      "res_id": "res_chk_7378_3_1fa62a3332e2",
+      "checkout_url": ""
+    }
   },
   "processed_tx": [],
   "earnings_usd": 0.0,
