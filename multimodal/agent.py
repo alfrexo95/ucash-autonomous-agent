@@ -112,7 +112,7 @@ def ensure_resources(agent, state):
     for name, cfg in CATALOG.items():
         if name not in state["resources"]:
             try:
-                res = agent.create_resource(amount=cfg["price"], title=cfg["desc"])
+                res = agent.create_resource(amount=cfg["price"])
                 state["resources"][name] = {"res_id": res["res_id"], "checkout_url": res.get("checkout_url", "")}
                 print(f"Recurso creado: {name} (${cfg['price']})")
             except Exception as e:

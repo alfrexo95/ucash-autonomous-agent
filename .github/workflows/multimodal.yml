@@ -2,7 +2,11 @@ name: Multimodal Agent
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *' # Respaldo cada 2 horas
+    - cron: '0 */2 * * *'
+
+# Permisos necesarios para que el bot pueda guardar el ucash_state.json
+permissions:
+  contents: write
 
 jobs:
   run-multimodal:
