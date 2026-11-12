@@ -1,50 +1,22 @@
-name: List U.CASH Services
+name: Debug U.CASH API
 on: workflow_dispatch
 
 jobs:
-  list:
+  debug:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - run: pip install agents-u-cash
-      - name: Query U.CASH
+      - name: Raw API Test
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
         run: |
-          python - << 'PY'
-          import os, json
-          from agents_u_cash import AgentsUCash
+          echo "=== 1. INFORMACION DE LA CUENTA ==="
+          curl -s -H "X-Api-Key: $UCASH_API_KEY" "https://agents.u.cash/v1/agent"
           
-          agent = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
-          resp = agent.get_resources()
+          echo -e "\n\n=== 2. LISTA DE TODOS LOS RECURSOS ==="
+          curl -s -H "X-Api-Key: $UCASH_API_KEY" "https://agents.u.cash/v1/resources"
           
-          print("=== RESPUESTA CRUDA DEL SDK ===")
-          print(json.dumps(resp, indent=2, default=str))
-          print("===============================\n")
+          echo -e "\n\n=== 3. BUSCAR UN RECURSO ESPECIFICO (res_chk_7378_1) ==="
+          curl -s -H "X-Api-Key: $UCASH_API_KEY" "https://agents.u.cash/v1/resources?res_id=res_chk_7378_1_bebf3e82441c"
           
-          # Extracción robusta
-          data = resp.get("response", resp) if isinstance(resp, dict) else resp
-          items = []
-          if isinstance(data, list):
-              items = data
-          elif isinstance(data, dict):
-              if "resources" in data:
-                  items = data["resources"]
-                  if isinstance(items, dict):
-                      items = list(items.values())
-              else:
-                  items = [v for v in data.values() if isinstance(v, dict) and "res_id" in v]
-          
-          print(f"=== TIENES {len(items)} SERVICIOS EN VIVO ===\n")
-          for res in items:
-              if not isinstance(res, dict):
-                  continue
-              print(f"SERVICIO: {res.get('title', 'Sin titulo')}")
-              print(f"  ID: {res.get('res_id')}")
-              print(f"  Precio: ${res.get('amount')} USD")
-              print(f"  Link: {res.get('checkout_url', '')[:80]}...")
-              print("-" * 50)
-          PY
+          echo -e "\n\n=== 4. HISTORIAL DE TRANSACCIONES ==="
+          curl -s -H "X-Api-Key: $UCASH_API_KEY" "https://agents.u.cash/v1/transactions?limit=5"
