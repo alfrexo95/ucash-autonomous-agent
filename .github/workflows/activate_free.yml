@@ -23,7 +23,8 @@ jobs:
           headers = {
               "X-Api-Key": api_key,
               "Content-Type": "application/json",
-              "Accept": "application/json"
+              "Accept": "application/json",
+              "User-Agent": "Predator-Ucash-Agent/1.0 (+https://github.com/alfrexo95/ucash-autonomous-agent)"
           }
 
           def api_call(path, payload=None, method="POST"):
