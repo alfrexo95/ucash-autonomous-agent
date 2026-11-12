@@ -1,0 +1,23 @@
+name: Check Live Services
+on: workflow_dispatch
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch OpenAPI from Worker
+        run: |
+          echo "=== SERVICIOS VIVOS EN EL WORKER ==="
+          curl -s https://predator-x402-proxy.alfrexo95.workers.dev/openapi.json | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+paths = data.get('paths', {})
+print(f'Total de servicios detectados: {len(paths)}\n')
+for path, info in paths.items():
+    get = info.get('get', {})
+    name = get.get('summary', 'N/A')
+    price_raw = get.get('x-payment-info', {}).get('price', {}).get('amount', '0')
+    price_usd = int(price_raw) / 1000000 if price_raw.isdigit() else price_raw
+    print(f'✅ {name} (${price_usd:.2f})')
+    print(f'   ID: {path.replace(\"/r/\", \"\")}\n')
+"
