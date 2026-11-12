@@ -1,0 +1,51 @@
+name: U.CASH Rescan v2 (raw)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rescan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install agents-u-cash
+      - name: Raw dump
+        env:
+          UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
+        run: |
+          python - << 'PY'
+          import os, json, inspect
+          from agents_u_cash import AgentsUCash
+
+          agent = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
+
+          print("=== firma get_transactions ===")
+          print(inspect.signature(agent.get_transactions))
+
+          print("\n=== get_transactions(status='P', limit=50) RAW ===")
+          try:
+              r = agent.get_transactions(status="P", limit=50)
+              print("tipo:", type(r).__name__)
+              print(json.dumps(r, indent=2, default=str)[:8000])
+          except Exception as e:
+              print("ERROR:", e)
+
+          print("\n=== get_transactions(status='C', limit=50) RAW ===")
+          try:
+              r = agent.get_transactions(status="C", limit=50)
+              print("tipo:", type(r).__name__)
+              print(json.dumps(r, indent=2, default=str)[:8000])
+          except Exception as e:
+              print("ERROR:", e)
+
+          print("\n=== get_transactions() sin filtro RAW ===")
+          try:
+              r = agent.get_transactions()
+              print("tipo:", type(r).__name__)
+              print(json.dumps(r, indent=2, default=str)[:8000])
+          except Exception as e:
+              print("ERROR:", e)
+          PY
