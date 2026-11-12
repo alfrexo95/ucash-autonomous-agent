@@ -11,36 +11,41 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - run: pip install agents-u-cash
-      - name: Resend verification and Redeem UCASH
+      - name: Redeem UCASH via API
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
         run: |
           python - << 'PY'
-          import os, json
-          from agents_u_cash import AgentsUCash
-          agent = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
+          import os, json, urllib.request, urllib.error
 
-          print("=== 1. Reenviando correo de verificacion ===")
-          try:
-              r = agent._request("POST", "/v1/resend-verification")
-              print("Resultado:", r)
-          except Exception as e:
-              print(f"Error al reenviar: {e}")
+          api_key = os.environ["UCASH_API_KEY"]
+          base = "https://agents.u.cash"
+          headers = {
+              "X-Api-Key": api_key,
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+          }
 
-          print("\n=== 2. Canjeando 120 UCASH a credito ===")
-          try:
-              # El endpoint /v1/billing acepta 'redeem-ucash' y un monto
-              r = agent._request("POST", "/v1/billing", json={"action": "redeem-ucash", "amount": 120})
-              print("Resultado:", r)
-          except Exception as e:
-              print(f"Error al canjear: {e}")
+          def api_call(path, payload=None, method="POST"):
+              url = base + path
+              data = json.dumps(payload).encode() if payload else None
+              req = urllib.request.Request(url, data=data, headers=headers, method=method)
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      return r.status, json.loads(r.read().decode())
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode()
 
-          print("\n=== 3. Verificando saldo final ===")
-          try:
-              ag = agent.get_agent()
-              print(f"Credit balance: {ag.get('credit_balance')}")
-              print(f"Activated: {ag.get('activated')}")
-          except Exception as e:
-              print(f"Error en get_agent: {e}")
+          print("=== 1. Estado actual ===")
+          code, body = api_call("/v1/agent", method="GET")
+          print(f"HTTP {code}: {json.dumps(body, indent=2) if isinstance(body, dict) else body}")
+
+          print("\n=== 2. Canjeando 120 UCASH ===")
+          payload = {"action": "redeem-ucash", "amount": 120}
+          code, body = api_call("/v1/billing", payload)
+          print(f"HTTP {code}: {json.dumps(body, indent=2) if isinstance(body, dict) else body}")
+
+          print("\n=== 3. Estado final ===")
+          code, body = api_call("/v1/agent", method="GET")
+          print(f"HTTP {code}: {json.dumps(body, indent=2) if isinstance(body, dict) else body}")
           PY
