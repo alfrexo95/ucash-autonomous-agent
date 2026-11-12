@@ -8,109 +8,110 @@
         :root { --bg: #0b0f19; --card: #151b2b; --text: #e2e8f0; --accent: #3b82f6; --accent-hover: #2563eb; }
         body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.6; }
         .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-        header { text-align: center; margin-bottom: 50px; }
+        header { text-align: center; margin-bottom: 40px; }
         h1 { font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p.subtitle { color: #94a3b8; font-size: 1.2rem; }
+        p.subtitle { color: #94a3b8; font-size: 1.1rem; max-width: 800px; margin: 0 auto 20px; }
+        .privacy-badge { display: inline-block; background: #10b98120; color: #10b981; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; border: 1px solid #10b98150; margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .card { background: var(--card); border: 1px solid #2d3748; border-radius: 12px; padding: 24px; transition: transform 0.2s, border-color 0.2s; display: flex; flex-direction: column; }
         .card:hover { transform: translateY(-4px); border-color: var(--accent); }
         .card h3 { margin-top: 0; font-size: 1.3rem; color: #fff; }
-        .card p { color: #94a3b8; flex-grow: 1; }
+        .card p { color: #94a3b8; flex-grow: 1; font-size: 0.95rem; }
         .price { font-size: 1.8rem; font-weight: bold; color: #10b981; margin: 15px 0; }
         .btn { display: inline-block; background: var(--accent); color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; text-align: center; font-weight: 600; transition: background 0.2s; }
         .btn:hover { background: var(--accent-hover); }
-        footer { text-align: center; margin-top: 60px; color: #64748b; font-size: 0.9rem; }
+        footer { text-align: center; margin-top: 60px; color: #64748b; font-size: 0.9rem; border-top: 1px solid #1e293b; padding-top: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Predator AI Agent</h1>
-            <p class="subtitle">Autonomous, high-performance AI services for the x402 economy.</p>
-            <p class="subtitle">Pay with BTC, ETH, or USDC.</p>
+            <p class="subtitle">Autonomous, high-performance AI services for Web3 and Agentic workflows. Powered by local PyTorch models. Zero external API costs.</p>
+            <div class="privacy-badge">🔒 Private Deliveries: All outputs are encrypted via SHA-256 hashes.</div>
         </header>
         <div class="grid">
             
     <div class="card">
         <h3>PromptForge Studio</h3>
-        <p>Expert Prompt Engineering</p>
+        <p>Expert Prompt Engineering using local Qwen 3B.</p>
         <div class="price">$2.00</div>
         <a href="https://pay.u.cash/checkout/v2:RYZynB5HY16TXzESTgwPDs9kaE6oH9x52_NHQjE?cloud=BFuFR-xOClEngP16-JeFYOJockFJ1pgA83fNPyx4rjNUs3aVi5DncKA76jxBqf0V3NkgjQT-sAscO1G7kjySiT3CoATghE-e6CjVXlbfJgk" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>Sentinel Code Review</h3>
-        <p>Python & Solidity Security Audit</p>
+        <p>Real AST & Solidity static analysis. AI-explained security report.</p>
         <div class="price">$5.00</div>
         <a href="https://pay.u.cash/checkout/v2:bUdV36t6P40mvn5h48171d0uKrbI3JBsG5Nktmw?cloud=ir8F-nmXRgOtnQCKct1oDUjOcVFTcXz2XNCi1po_v0dJxbwnF6fmumk7kAdwrtmz-MMeaUTP0WpTxDovZyFsBAzDtqL3GcWw3DuDKa0DDUs" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>DeepIntel Research</h3>
-        <p>Verified Web Research & Reports</p>
+        <p>Verified web research with URL citations.</p>
         <div class="price">$3.00</div>
         <a href="https://pay.u.cash/checkout/v2:1-5TSZQj3zqnAqSNz_7znbHoiw6RUuW7yUFKKNo?cloud=4AGtvjHM_ECfQMmrkMYPUbNlo251--hKufVOpu_1HfOuTBHp-tw01A6HTjjA8t1_m6pHLH91Gg4epMUjCzTDC3GhveJ5NrrBRcwJgLxQOQY" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>TextLens OCR</h3>
-        <p>Image to Text Extraction</p>
+        <p>Image to text extraction (Tesseract). SSRF-protected.</p>
         <div class="price">$1.00</div>
         <a href="https://pay.u.cash/checkout/v2:VOK3eLpKN0yvvsTYkceSBCwT4yzfxa-WxVmFo7g?cloud=B10S-MMKlBxwIf1HSdVXEgr2iCP4yFCHhHi9gs4B7ThdO9PTGW94Cfuck4LBLd-jrTmSGEZAD99wp57Agta5wiSfJOv04QdM8dkkh3zYMpA" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>EmotionPulse</h3>
-        <p>Sentiment & Emotion Analysis</p>
+        <p>Sentiment analysis using DistilBERT.</p>
         <div class="price">$2.00</div>
         <a href="https://pay.u.cash/checkout/v2:rBsNWHGF0rv4g3qdFMwwraU0ScyD_u8oxPWbV70?cloud=U2v_XgqmT9pPl8T7LYqDGgJOzeR4T_XdmE-ucyt5FDSDD96B_m-eTqChWrfUcyme0UY3hz4M2Q942KDUtWGIQMP9MT3aYKlLXT6IQsfK648" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>VisionTag Classifier</h3>
-        <p>Image Classification & Tagging</p>
+        <p>Image classification using Google ViT.</p>
         <div class="price">$2.00</div>
         <a href="https://pay.u.cash/checkout/v2:keupqFyWWTMRPQhjCom2Gsb16Jw3e-beuYIP6Cc?cloud=UZBlWtcSP92PvDBpIuja39UrU1YkKUw9FeI6fuSJhHibRjq5OFFeTJOkeED0evezXRsnjmOCTdB-JsXCI5gG8BOgqEvfxFe_hM0EEl9_6yw" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>Polyglot Bridge</h3>
-        <p>Multi-Language Translation</p>
+        <p>Multi-language translation (Helsinki-NLP).</p>
         <div class="price">$3.00</div>
         <a href="https://pay.u.cash/checkout/v2:BT7lSXvv9rppEXenOO5XuPu5ZDI_6_C9xMaxWJ4?cloud=keaO1YJWx8xZjnbIfAOgpMe4lrX4hM7CxFYkoor1hGfiBkwv71aHOMMHDAUyNy_anNa_vEW5jRFzNxUtr_YanzHgPYa76rMVUvt8RYmWT7g" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>BriefCraft Summarizer</h3>
-        <p>Document Summarization</p>
+        <p>Executive document summaries (Facebook BART).</p>
         <div class="price">$4.00</div>
         <a href="https://pay.u.cash/checkout/v2:wM4G4yRs_pHjsjYPU7uuEQTeFYlobgt5WXCWjDc?cloud=3pUs4mxbO0xNDbTEvoHdKbjiInXbCT35MypyJkvGqF7vNC-YGwaicKe28komduObNmZbwL0JdD3ROJI3_2TZTLvOLVeFYBSVS0Q7ki2Elqs" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>EchoScript Transcriber</h3>
-        <p>Audio to Text Transcription</p>
+        <p>Audio to text using Whisper-tiny.</p>
         <div class="price">$6.00</div>
         <a href="https://pay.u.cash/checkout/v2:w4fntWauUmRPQICk6WS5fJ_XgV36SwRrS0fqDSbb?cloud=Oo-BbXWaWIKWVlFn9l_Bb7WXL429JLocbwldHKYbe-LTFNFHqWxdCfQlh4U710T1JDEGLEA15on1oqoQG4FZLWCr0nR6Mn0ek9mAQZEDQ3U" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>ObjectScope Detector</h3>
-        <p>Image Object Detection</p>
+        <p>Object detection & counting using DETR.</p>
         <div class="price">$8.00</div>
         <a href="https://pay.u.cash/checkout/v2:AG8mxVEBpNrKzF4p1wPMSytzA9_gTeI3qGDMTIxw?cloud=TWQzZuO_AqWd9X4uDsig06MUBZ6gIOJF4dev3fAU2Tmw3Uj_P9IevVH_mSBk7dWtA-EMCHJoOpud49c21SpKHWatk7MvBG17Tki3gWy_354" target="_blank" class="btn">Buy Service</a>
     </div>
     
     <div class="card">
         <h3>ChainGuard Auditor</h3>
-        <p>Deep Smart Contract Audit</p>
+        <p>Premium deep Solidity audit (Qwen 3B + AST static analysis).</p>
         <div class="price">$20.00</div>
         <a href="https://pay.u.cash/checkout/v2:4rkVlLnnO9kgZIoClvqmmrSvsJeBTiKZTyD3LgvD?cloud=TVDMonXq98vOM3ZKSZhL4IEvFx9xVszAFRm2aF52sjTG0753qoc-XTwO5-5zXuzi2ymulY6K2XtiQ9nKaXuUgXsVL-VmLPyKsEL2o6Cfw1E" target="_blank" class="btn">Buy Service</a>
     </div>
     
         </div>
         <footer>
-            <p>Powered by U.CASH & Cloudflare Workers. No external AI APIs used.</p>
+            <p>Powered by U.CASH, Cloudflare Workers & GitHub Actions. Local Qwen 3B / Whisper / Tesseract inference.</p>
         </footer>
     </div>
 </body>
