@@ -1,32 +1,36 @@
 # 🦅 Predator U.CASH Autonomous Agent
 
 An advanced, multi-modal AI agent system designed for the **x402 Agentic Economy**. 
-It sells 11 distinct AI services autonomously, processes payments in crypto (BTC, ETH, USDC), and executes local inference (PyTorch/TensorFlow) without any external paid AI APIs.
+It sells 11 distinct AI services autonomously, processes payments in crypto (BTC, ETH, USDC), and executes local inference (PyTorch) without any external paid AI APIs.
 
 ## 🚀 Live Services
-View the full interactive catalog and buy services directly at:
 👉 **[Landing Page](https://alfrexo95.github.io/ucash-autonomous-agent/)**
 
-For AI Agents looking for the OpenAPI schema:
-👉 **[OpenAPI JSON](https://predator-x402-proxy.alfrexo95.workers.dev/openapi.json)**
+## 🔒 Private Deliveries (How it works)
+To protect our clients' privacy, all orders are encrypted in the repository. 
+When you place an order, you must include a **Claim Code** in your prompt. For example:
+> `[Claim: my_secret_password_123] Please audit this Python code...`
+
+Once the AI finishes the job, it will save the file in `deliveries/` using a SHA-256 hash of `Transaction_ID + Claim_Code`. Nobody can read your file unless they know your claim code. To retrieve your file, calculate `sha256(tx_id-claim_code)` and look for that file in the `/deliveries` folder.
 
 ## 🧠 The 11 AI Services
-1. **PromptForge Studio** ($2) - Expert Prompt Engineering
-2. **Sentinel Code Review** ($5) - Python & Solidity Security Audit
-3. **DeepIntel Research** ($3) - Verified Web Research
-4. **TextLens OCR** ($1) - Image to Text Extraction
-5. **EmotionPulse Analyzer** ($2) - Sentiment & Emotion Analysis
-6. **VisionTag Classifier** ($2) - Image Classification
-7. **Polyglot Bridge** ($3) - Multi-Language Translation
-8. **BriefCraft Summarizer** ($4) - Document Summarization
-9. **EchoScript Transcriber** ($6) - Audio to Text
-10. **ObjectScope Detector** ($8) - Image Object Detection
-11. **ChainGuard Auditor** ($20) - Deep Smart Contract Audit
+*Text Models: Qwen2.5-Coder-3B-Instruct (Specialized in Code)*
+1. **PromptForge Studio** ($2)
+2. **Sentinel Code Review** ($5) - Real AST & Solidity analysis
+3. **DeepIntel Research** ($3)
+
+*Multimodal Models: Whisper, ViT, DETR, Tesseract*
+4. **TextLens OCR** ($1)
+5. **EmotionPulse Analyzer** ($2)
+6. **VisionTag Classifier** ($2)
+7. **Polyglot Bridge** ($3)
+8. **BriefCraft Summarizer** ($4)
+9. **EchoScript Transcriber** ($6)
+10. **ObjectScope Detector** ($8)
+11. **ChainGuard Auditor** ($20)
 
 ## ⚙️ Architecture
-- **Payment Processing**: U.CASH (HTTP 402 protocol)
-- **Webhook Router**: Cloudflare Worker (Zero-latency triggers)
-- **Execution Engine**: GitHub Actions (Ephemeral, CPU-optimized)
-- **AI Models**: HuggingFace Transformers & TensorFlow (Local, private, zero-cost API)
-
-*Note: The API keys and wallets are securely managed via GitHub Secrets and Cloudflare Environment Variables. Cloning this repository does not expose any private credentials.*
+- **Payment**: U.CASH (HTTP 402)
+- **Webhook**: Cloudflare Worker (Zero-latency)
+- **Execution**: GitHub Actions (Ephemeral, CPU-optimized)
+- **AI**: HuggingFace Transformers (Local, zero-cost API)
