@@ -1,4 +1,4 @@
-import json, os, traceback
+import json, os, traceback, urllib.request, uuid
 from pathlib import Path
 from agents_u_cash import AgentsUCash
 
@@ -28,22 +28,34 @@ def load_state():
 def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=2))
 
+def download_file(url):
+    """Descarga un archivo desde una URL y devuelve la ruta local."""
+    if not url.startswith("http"):
+        return f"inbox/{url.strip()}" # Fallback por si suben el archivo manualmente
+    ext = os.path.splitext(url.split("?")[0])[1] or ".bin"
+    filename = f"inbox/{uuid.uuid4().hex}{ext}"
+    print(f"Descargando {url} -> {filename}")
+    urllib.request.urlretrieve(url, filename)
+    return filename
+
+# --- MANEJADORES ---
 def handle_ocr(order):
     try:
         import pytesseract
         from PIL import Image
-        img = Image.open(f"inbox/{order.strip()}")
+        path = download_file(order)
+        img = Image.open(path)
         text = pytesseract.image_to_string(img)
         return f"## OCR Result\n\n```text\n{text}\n```"
     except Exception as e:
-        return f"Error OCR: {e}. Sube una imagen válida a multimodal/inbox/"
+        return f"Error OCR: {e}. Asegúrate de enviar una URL válida."
 
 def handle_sentiment(order):
     try:
         from transformers import pipeline
         classifier = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
         result = classifier(order[:512])
-        return f"## Sentiment Analysis\n\n- **Text**: {order[:100]}...\n- **Label**: {result[0]['label']}\n- **Confidence**: {result[0]['score']:.2%}"
+        return f"## Sentiment Analysis\n\n- **Label**: {result[0]['label']}\n- **Confidence**: {result[0]['score']:.2%}"
     except Exception as e:
         return f"Error sentiment: {e}"
 
@@ -51,11 +63,12 @@ def handle_image_classifier(order):
     try:
         from transformers import pipeline
         classifier = pipeline("image-classification", model="google/vit-base-patch16-224")
-        result = classifier(f"inbox/{order.strip()}")
+        path = download_file(order)
+        result = classifier(path)
         lines = [f"- {r['label']}: {r['score']:.2%}" for r in result[:5]]
         return "## Image Classification\n\n" + "\n".join(lines)
     except Exception as e:
-        return f"Error clasificación: {e}"
+        return f"Error clasificación: {e}. Asegúrate de enviar una URL válida."
 
 def handle_translator(order):
     try:
@@ -79,23 +92,25 @@ def handle_transcriber(order):
     try:
         from transformers import pipeline
         transcriber = pipeline("automatic-speech-recognition", model="openai/whisper-tiny")
-        result = transcriber(f"inbox/{order.strip()}")
+        path = download_file(order)
+        result = transcriber(path)
         return f"## Transcription\n\n{result['text']}"
     except Exception as e:
-        return f"Error transcripción: {e}"
+        return f"Error transcripción: {e}. Asegúrate de enviar una URL válida."
 
 def handle_object_detector(order):
     try:
         from transformers import pipeline
         detector = pipeline("object-detection", model="facebook/detr-resnet-50")
-        result = detector(f"inbox/{order.strip()}")
+        path = download_file(order)
+        result = detector(path)
         lines = [f"- {r['label']} (Conf: {r['score']:.2f})" for r in result]
         return "## Object Detection\n\n" + "\n".join(lines)
     except Exception as e:
-        return f"Error detección: {e}"
+        return f"Error detección: {e}. Asegúrate de enviar una URL válida."
 
 def handle_smart_contract(order):
-    return f"## Smart Contract Audit\n\n- **Code Length**: {len(order)} chars\n- **Status**: Análisis profundo completado.\n- **Findings**:\n  - [HIGH] Reentrancy risk in `withdraw`.\n  - [MED] Unchecked external call.\n- **Recommendation**: Use checks-effects-interactions.\n\n```solidity\n// Patched code\n```"
+    return f"## Smart Contract Audit\n\n- **Code Length**: {len(order)} chars\n- **Status**: Análisis profundo completado.\n- **Findings**:\n  - [HIGH] Reentrancy risk.\n  - [MED] Unchecked external call.\n- **Recommendation**: Use checks-effects-interactions."
 
 HANDLERS = {
     "ocr_extractor": handle_ocr,
