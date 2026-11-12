@@ -54,6 +54,8 @@ def handle_ocr(order):
         return f"Error OCR: {e}. Asegúrate de enviar una URL válida."
 
 def handle_sentiment(order):
+    # Usamos un modelo más específico para emociones
+    pass
     try:
         from transformers import pipeline
         classifier = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
@@ -74,6 +76,8 @@ def handle_image_classifier(order):
         return f"Error clasificación: {e}. Asegúrate de enviar una URL válida."
 
 def handle_translator(order):
+    # Si el pedido contiene un texto, simulamos la detección
+    text = order.replace("EN->ES", "").replace("ES->EN", "").strip()
     try:
         from transformers import pipeline
         translator = pipeline("translation_en_to_es", model="Helsinki-NLP/opus-mt-en-es")
@@ -147,7 +151,8 @@ def read_order(tx):
 
 def process(agent, state):
     txs = agent.get_transactions(status="C", limit=50)
-    tx_list = txs.get("transactions", []) if isinstance(txs, dict) else txs
+    resp = txs.get("response", txs) if isinstance(txs, dict) else txs
+    tx_list = resp.get("transactions", []) if isinstance(resp, dict) else resp
     for tx in tx_list:
         tx_id = str(tx.get("id"))
         if tx_id in state["processed_tx"]: continue

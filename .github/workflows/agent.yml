@@ -55,5 +55,5 @@ jobs:
           git add deliveries/ ucash_state.json || true
           if ! git diff --cached --quiet; then
             git commit -m "auto: delivery update [skip ci]"
-            git push
+            git pull --rebase origin master && git push
           fi

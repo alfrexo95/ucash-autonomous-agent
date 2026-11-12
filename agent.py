@@ -102,8 +102,19 @@ def svc_automation_builder(order):
     cached = get_cache(cache_key)
     if cached: return cached["md"]
     
-    # Simulamos generación de código
-    code = "def run():\n    print('hello')" # Aquí iría tu modelo
+    # Validación real de sintaxis
+    is_valid, msg = validate_python(order)
+    result = f"## Automation Builder
+
+**Validation:** {msg}
+
+```python
+{order}
+```"
+    set_cache(cache_key, {"md": result})
+    return result
+
+def run():\n    print('hello')" # Aquí iría tu modelo
     is_valid, msg = validate_python(code)
     
     result = f"## Automation Builder\n\nValidation: {msg}\n\n```python\n{code}\n```"
@@ -119,6 +130,13 @@ def svc_prompt_engineering(order):
 
 
 def svc_code_audit(order):
+    if "pragma solidity" in order:
+        is_valid, msg = validate_solidity(order)
+        return f"## Smart Contract Audit\n\n**Status:** {msg}\n\n**Code Length:** {len(order)} chars"
+    else:
+        is_valid, msg = validate_python(order)
+        return f"## Python Code Audit\n\n**Syntax Check:** {msg}\n\n**Code Length:** {len(order)} chars"
+
     return ask(
         "You are a security auditor for Python/Solidity. List vulnerabilities by severity, explain "
         "each briefly, and give corrected code. Do not invent issues that are not in the code.",

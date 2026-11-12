@@ -26,6 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r multimodal/requirements.txt
+          sudo apt-get update && sudo apt-get install -y tesseract-ocr
           
       - name: Run Multimodal Agent
         working-directory: ./multimodal
@@ -41,5 +42,5 @@ jobs:
           git add multimodal/deliveries/ multimodal/ucash_state.json || true
           if ! git diff --cached --quiet; then
             git commit -m "auto: multimodal delivery [skip ci]"
-            git push
+            git pull --rebase origin master && git push
           fi
