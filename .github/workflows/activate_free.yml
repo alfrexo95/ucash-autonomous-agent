@@ -1,0 +1,46 @@
+name: U.CASH Activate Free Credit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install agents-u-cash
+      - name: Resend verification and Redeem UCASH
+        env:
+          UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
+        run: |
+          python - << 'PY'
+          import os, json
+          from agents_u_cash import AgentsUCash
+          agent = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
+
+          print("=== 1. Reenviando correo de verificacion ===")
+          try:
+              r = agent._request("POST", "/v1/resend-verification")
+              print("Resultado:", r)
+          except Exception as e:
+              print(f"Error al reenviar: {e}")
+
+          print("\n=== 2. Canjeando 120 UCASH a credito ===")
+          try:
+              # El endpoint /v1/billing acepta 'redeem-ucash' y un monto
+              r = agent._request("POST", "/v1/billing", json={"action": "redeem-ucash", "amount": 120})
+              print("Resultado:", r)
+          except Exception as e:
+              print(f"Error al canjear: {e}")
+
+          print("\n=== 3. Verificando saldo final ===")
+          try:
+              ag = agent.get_agent()
+              print(f"Credit balance: {ag.get('credit_balance')}")
+              print(f"Activated: {ag.get('activated')}")
+          except Exception as e:
+              print(f"Error en get_agent: {e}")
+          PY
