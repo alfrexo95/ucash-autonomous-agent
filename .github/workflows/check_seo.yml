@@ -1,0 +1,32 @@
+name: Verify Agentic SEO
+on:
+  workflow_dispatch:
+
+jobs:
+  check-seo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch OpenAPI and check keywords
+        run: |
+          echo "Descargando catalogo desde Cloudflare..."
+          curl -s https://predator-x402-proxy.alfrexo95.workers.dev/openapi.json > openapi.json
+          
+          echo -e "\n=== 1. DESCRIPCION GLOBAL (SEO) ==="
+          python3 -c "import json; d=json.load(open('openapi.json')); print(d['info']['description'])"
+          
+          echo -e "\n=== 2. VERIFICANDO PALABRAS CLAVE CLAVE ==="
+          for keyword in "Solana" "audit" "Python" "optimization" "verified web research" "OCR" "transcription"; do
+              if grep -qi "$keyword" openapi.json; then
+                  echo "✅ Palabra clave encontrada: $keyword"
+              else
+                  echo "❌ FALTA la palabra clave: $keyword"
+              fi
+          done
+          
+          echo -e "\n=== 3. TAGS DEL CATALOGO ==="
+          python3 -c "
+import json
+d = json.load(open('openapi.json'))
+for tag in d.get('tags', []):
+    print(f'- {tag[\"name\"]}: {tag[\"description\"]}')
+"
