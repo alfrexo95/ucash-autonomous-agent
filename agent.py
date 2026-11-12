@@ -70,9 +70,17 @@ log(f"Cargando modelo {MODEL_NAME} ...")
 generator = pipeline("text-generation", model=MODEL_NAME, device_map="cpu", dtype="auto")
 
 
+import torch
+
 def ask(system, user, max_tokens=900):
+    torch.manual_seed(42)
     msgs = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-    out = generator(msgs, max_new_tokens=max_tokens, temperature=0.2, do_sample=True)
+    out = generator(
+        msgs,
+        max_new_tokens=max_tokens,
+        do_sample=False,
+        repetition_penalty=1.1,
+    )
     return out[0]["generated_text"][-1]["content"].strip()
 
 
@@ -181,12 +189,23 @@ def service_for_res(state, res_id):
 
 
 def read_order(tx):
-    """Pedido del cliente: descripcion del pago o archivo inbox/<tx_id>.txt / inbox/<res_id>.txt."""
+    """Extrae el pedido de custom_fields, description o inbox (en ese orden)."""
+    # 1. custom_fields: el campo que creamos en el checkout
+    cf = tx.get("custom_fields", {})
+    if isinstance(cf, dict):
+        for k, v in cf.items():
+            if isinstance(v, str) and len(v.strip()) > 5:
+                return v.strip()
+    # 2. description (fallback)
+    desc = (tx.get("description") or "").strip()
+    if desc:
+        return desc
+    # 3. inbox (fallback manual)
     for key in (str(tx.get("id")), str(tx.get("res_id"))):
         p = INBOX / f"{key}.txt"
         if p.exists():
             return p.read_text().strip()
-    return (tx.get("description") or "").strip()
+    return ""
 
 
 def process_settled(agent, state):
