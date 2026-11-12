@@ -132,6 +132,32 @@ def as_list(resp):
     return resp if isinstance(resp, list) else []
 
 
+
+
+def fill_missing_checkout_urls(agent, state):
+    """Rellena checkout_url vacias consultando get_resources() del SDK."""
+    try:
+        resp = agent.get_resources()
+    except Exception as e:
+        log(f"get_resources fallo: {e}")
+        return
+    items = resp.get("response", resp) if isinstance(resp, dict) else resp
+    if not isinstance(items, list):
+        return
+    by_res = {r.get("res_id"): r.get("checkout_url", "") for r in items if isinstance(r, dict)}
+    changed = False
+    for name, cfg in state["resources"].items():
+        if cfg.get("checkout_url"):
+            continue
+        url = by_res.get(cfg["res_id"], "")
+        if url:
+            cfg["checkout_url"] = url
+            changed = True
+            log(f"checkout_url rellenada para {name}")
+    if changed:
+        save_state(state)
+
+
 def ensure_resources(agent, state):
     """Crea un recurso 402 por servicio (una sola vez) y guarda su checkout_url."""
     for name, cfg in CATALOG.items():
