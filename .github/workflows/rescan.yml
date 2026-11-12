@@ -1,0 +1,52 @@
+name: U.CASH Rescan Pending
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rescan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install agents-u-cash
+      - name: Rescan pending transactions
+        env:
+          UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
+        run: |
+          python - << 'PY'
+          import os
+          from agents_u_cash import AgentsUCash
+
+          agent = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
+
+          print("--- Pendientes (P) ---")
+          try:
+              pend = agent.get_transactions(status="P", limit=50)
+              print(f"Encontradas: {len(pend)}")
+              for tx in pend:
+                  print(f"  - {tx.get('id')} | {tx.get('title','')}")
+          except Exception as e:
+              print(f"Error listando: {e}")
+              pend = []
+
+          print("\n--- Forzando re-escaneo ---")
+          for tx in pend:
+              tx_id = tx.get("id")
+              try:
+                  det = agent.get_transaction(tx_id)
+                  print(f"  - {tx_id} -> {det.get('status','?')}")
+              except Exception as e:
+                  print(f"  - {tx_id} -> Error: {e}")
+
+          print("\n--- Completadas (C) ---")
+          try:
+              comp = agent.get_transactions(status="C", limit=10)
+              print(f"Completadas: {len(comp)}")
+              for tx in comp:
+                  print(f"  - {tx.get('id')} | {tx.get('amount_fiat','')} USD")
+          except Exception as e:
+              print(f"Error listando C: {e}")
+          PY
