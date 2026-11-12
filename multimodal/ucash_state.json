@@ -1,0 +1,39 @@
+{
+  "resources": {
+    "ocr_extractor": {
+      "res_id": "res_chk_7378_5_19dd49a0a946",
+      "checkout_url": "https://pay.u.cash/checkout/v2:VOK3eLpKN0yvvsTYkceSBCwT4yzfxa-WxVmFo7g?cloud=B10S-MMKlBxwIf1HSdVXEgr2iCP4yFCHhHi9gs4B7ThdO9PTGW94Cfuck4LBLd-jrTmSGEZAD99wp57Agta5wiSfJOv04QdM8dkkh3zYMpA"
+    },
+    "sentiment_analyzer": {
+      "res_id": "res_chk_7378_6_7cf4369cbefc",
+      "checkout_url": "https://pay.u.cash/checkout/v2:rBsNWHGF0rv4g3qdFMwwraU0ScyD_u8oxPWbV70?cloud=U2v_XgqmT9pPl8T7LYqDGgJOzeR4T_XdmE-ucyt5FDSDD96B_m-eTqChWrfUcyme0UY3hz4M2Q942KDUtWGIQMP9MT3aYKlLXT6IQsfK648"
+    },
+    "image_classifier": {
+      "res_id": "res_chk_7378_7_0d3b51eef11f",
+      "checkout_url": "https://pay.u.cash/checkout/v2:keupqFyWWTMRPQhjCom2Gsb16Jw3e-beuYIP6Cc?cloud=UZBlWtcSP92PvDBpIuja39UrU1YkKUw9FeI6fuSJhHibRjq5OFFeTJOkeED0evezXRsnjmOCTdB-JsXCI5gG8BOgqEvfxFe_hM0EEl9_6yw"
+    },
+    "text_translator": {
+      "res_id": "res_chk_7378_8_e2b16417cb33",
+      "checkout_url": "https://pay.u.cash/checkout/v2:BT7lSXvv9rppEXenOO5XuPu5ZDI_6_C9xMaxWJ4?cloud=keaO1YJWx8xZjnbIfAOgpMe4lrX4hM7CxFYkoor1hGfiBkwv71aHOMMHDAUyNy_anNa_vEW5jRFzNxUtr_YanzHgPYa76rMVUvt8RYmWT7g"
+    },
+    "document_summarizer": {
+      "res_id": "res_chk_7378_9_d8aeeab3110b",
+      "checkout_url": "https://pay.u.cash/checkout/v2:wM4G4yRs_pHjsjYPU7uuEQTeFYlobgt5WXCWjDc?cloud=3pUs4mxbO0xNDbTEvoHdKbjiInXbCT35MypyJkvGqF7vNC-YGwaicKe28komduObNmZbwL0JdD3ROJI3_2TZTLvOLVeFYBSVS0Q7ki2Elqs"
+    },
+    "audio_transcriber": {
+      "res_id": "res_chk_7378_10_1b1377b82fff",
+      "checkout_url": "https://pay.u.cash/checkout/v2:w4fntWauUmRPQICk6WS5fJ_XgV36SwRrS0fqDSbb?cloud=Oo-BbXWaWIKWVlFn9l_Bb7WXL429JLocbwldHKYbe-LTFNFHqWxdCfQlh4U710T1JDEGLEA15on1oqoQG4FZLWCr0nR6Mn0ek9mAQZEDQ3U"
+    },
+    "object_detector": {
+      "res_id": "res_chk_7378_11_6fc0bed68bd4",
+      "checkout_url": "https://pay.u.cash/checkout/v2:AG8mxVEBpNrKzF4p1wPMSytzA9_gTeI3qGDMTIxw?cloud=TWQzZuO_AqWd9X4uDsig06MUBZ6gIOJF4dev3fAU2Tmw3Uj_P9IevVH_mSBk7dWtA-EMCHJoOpud49c21SpKHWatk7MvBG17Tki3gWy_354"
+    },
+    "smart_contract_auditor": {
+      "res_id": "res_chk_7378_12_3066d41b8724",
+      "checkout_url": "https://pay.u.cash/checkout/v2:4rkVlLnnO9kgZIoClvqmmrSvsJeBTiKZTyD3LgvD?cloud=TVDMonXq98vOM3ZKSZhL4IEvFx9xVszAFRm2aF52sjTG0753qoc-XTwO5-5zXuzi2ymulY6K2XtiQ9nKaXuUgXsVL-VmLPyKsEL2o6Cfw1E"
+    }
+  },
+  "processed_tx": [],
+  "earnings_usd": 0.0,
+  "history": []
+}
