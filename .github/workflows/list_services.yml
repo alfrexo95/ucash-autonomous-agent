@@ -15,13 +15,33 @@ jobs:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
         run: |
           python - << 'PY'
-          import os
+          import os, json
           from agents_u_cash import AgentsUCash
+          
           agent = AgentsUCash(api_key=os.environ["UCASH_API_KEY"])
           resp = agent.get_resources()
-          items = resp.get("response", resp) if isinstance(resp, dict) else resp
-          print(f"\n=== TIENES {len(items)} SERVICIOS EN VIVO EN U.CASH ===\n")
+          
+          print("=== RESPUESTA CRUDA DEL SDK ===")
+          print(json.dumps(resp, indent=2, default=str))
+          print("===============================\n")
+          
+          # Extracción robusta
+          data = resp.get("response", resp) if isinstance(resp, dict) else resp
+          items = []
+          if isinstance(data, list):
+              items = data
+          elif isinstance(data, dict):
+              if "resources" in data:
+                  items = data["resources"]
+                  if isinstance(items, dict):
+                      items = list(items.values())
+              else:
+                  items = [v for v in data.values() if isinstance(v, dict) and "res_id" in v]
+          
+          print(f"=== TIENES {len(items)} SERVICIOS EN VIVO ===\n")
           for res in items:
+              if not isinstance(res, dict):
+                  continue
               print(f"SERVICIO: {res.get('title', 'Sin titulo')}")
               print(f"  ID: {res.get('res_id')}")
               print(f"  Precio: ${res.get('amount')} USD")
