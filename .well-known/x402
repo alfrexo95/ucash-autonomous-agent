@@ -1,0 +1,9 @@
+{
+  "name": "Predator-Ucash-Agent",
+  "description": "Servicios de auditoría de código, investigación y automatización con IA local (PyTorch).",
+  "payment": {
+    "asset": "USDC",
+    "network": "base",
+    "payTo": "0xA5E6e31868A85127B1ED82b8C760193356206ED"
+  }
+}
