@@ -1,0 +1,64 @@
+name: Predator U.CASH Agent Elite
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        description: Install heavy AI libraries?
+        options:
+          - light
+          - heavy_ai
+        default: light
+  push:
+    branches:
+      - master
+    paths:
+      - agent.py
+      - setup_ucash.py
+      - requirements*.txt
+      - .github/workflows/**
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install base dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile Python
+        run: python -m py_compile agent.py setup_ucash.py
+
+      - name: Install CPU PyTorch
+        if: ${{ github.event.inputs.mode == 'heavy_ai' }}
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install AI dependencies
+        if: ${{ github.event.inputs.mode == 'heavy_ai' }}
+        run: pip install -r requirements-heavy.txt
+
+      - name: Check AI imports
+        if: ${{ github.event.inputs.mode == 'heavy_ai' }}
+        run: python -c "import torch, transformers; print(torch.__version__, transformers.__version__)"
+
+      - name: Check U.CASH secret
+        env:
+          UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
+        run: |
+          if [ -n "$UCASH_API_KEY" ]; then
+            echo "U.CASH secret configured"
+          else
+            echo "U.CASH secret absent; authenticated checks skipped"
+          fi

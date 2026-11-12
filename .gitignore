@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+orders.json
+published_services.json
+*.bak
+*.log
+.DS_Store

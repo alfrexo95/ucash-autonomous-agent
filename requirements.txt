@@ -1,0 +1,4 @@
+transformers>=4.37.0
+accelerate
+ddgs
+agents-u-cash
