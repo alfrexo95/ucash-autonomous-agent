@@ -1,10 +1,9 @@
 {
-  "x402Version": 1,
+  "x402Version": 2,
   "resources": [
     {
-      "url": "https://pay.u.cash/checkout/v2:RYZynB5HY16TXzESTgwPDs9kaE6oH9x52_NHQjE?cloud=BFuFR-xOClEngP16-JeFYOJockFJ1pgA83fNPyx4rjNUs3aVi5DncKA76jxBqf0V3NkgjQT-sAscO1G7kjySiT3CoATghE-e6CjVXlbfJgk&agent=1",
-      "method": "GET",
-      "description": "Predator Code Analyzer: Auditoria de codigo Python y Solidity ($5 USD)",
+      "resource": "https://alfrexo95.github.io/ucash-autonomous-agent/.well-known/x402",
+      "description": "Predator Code Analyzer: Auditoría de código Python y Solidity ($5 USD)",
       "accepts": [
         {
           "scheme": "exact",
@@ -12,16 +11,14 @@
           "maxAmountRequired": "5000000",
           "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
           "payTo": "0xA5E6eB31868A85127B1ED82b8C760193356206ED",
-          "resource": "https://pay.u.cash/checkout/v2:RYZynB5HY16TXzESTgwPDs9kaE6oH9x52_NHQjE?cloud=BFuFR-xOClEngP16-JeFYOJockFJ1pgA83fNPyx4rjNUs3aVi5DncKA76jxBqf0V3NkgjQT-sAscO1G7kjySiT3CoATghE-e6CjVXlbfJgk&agent=1",
-          "description": "Auditoria de codigo",
+          "resource": "https://alfrexo95.github.io/ucash-autonomous-agent/.well-known/x402",
           "mimeType": "application/json"
         }
       ]
     },
     {
-      "url": "https://pay.u.cash/checkout/v2:bUdV36t6P40mvn5h48171d0uKrbI3JBsG5Nktmw?cloud=ir8F-nmXRgOtnQCKct1oDUjOcVFTcXz2XNCi1po_v0dJxbwnF6fmumk7kAdwrtmz-MMeaUTP0WpTxDovZyFsBAzDtqL3GcWw3DuDKa0DDUs&agent=1",
-      "method": "GET",
-      "description": "Predator Research Intelligence: Investigacion web verificada ($3 USD)",
+      "resource": "https://alfrexo95.github.io/ucash-autonomous-agent/.well-known/x402",
+      "description": "Predator Research Intelligence: Investigación web verificada ($3 USD)",
       "accepts": [
         {
           "scheme": "exact",
@@ -29,16 +26,14 @@
           "maxAmountRequired": "3000000",
           "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
           "payTo": "0xA5E6eB31868A85127B1ED82b8C760193356206ED",
-          "resource": "https://pay.u.cash/checkout/v2:bUdV36t6P40mvn5h48171d0uKrbI3JBsG5Nktmw?cloud=ir8F-nmXRgOtnQCKct1oDUjOcVFTcXz2XNCi1po_v0dJxbwnF6fmumk7kAdwrtmz-MMeaUTP0WpTxDovZyFsBAzDtqL3GcWw3DuDKa0DDUs&agent=1",
-          "description": "Investigacion web",
+          "resource": "https://alfrexo95.github.io/ucash-autonomous-agent/.well-known/x402",
           "mimeType": "application/json"
         }
       ]
     },
     {
-      "url": "https://pay.u.cash/checkout/v2:1-5TSZQj3zqnAqSNz_7znbHoiw6RUuW7yUFKKNo?cloud=4AGtvjHM_ECfQMmrkMYPUbNlo251--hKufVOpu_1HfOuTBHp-tw01A6HTjjA8t1_m6pHLH91Gg4epMUjCzTDC3GhveJ5NrrBRcwJgLxQOQY&agent=1",
-      "method": "GET",
-      "description": "Predator Automation Builder: Generacion de scripts Python y bots ($2 USD)",
+      "resource": "https://alfrexo95.github.io/ucash-autonomous-agent/.well-known/x402",
+      "description": "Predator Automation Builder: Generación de scripts Python y bots ($2 USD)",
       "accepts": [
         {
           "scheme": "exact",
@@ -46,8 +41,7 @@
           "maxAmountRequired": "2000000",
           "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
           "payTo": "0xA5E6eB31868A85127B1ED82b8C760193356206ED",
-          "resource": "https://pay.u.cash/checkout/v2:1-5TSZQj3zqnAqSNz_7znbHoiw6RUuW7yUFKKNo?cloud=4AGtvjHM_ECfQMmrkMYPUbNlo251--hKufVOpu_1HfOuTBHp-tw01A6HTjjA8t1_m6pHLH91Gg4epMUjCzTDC3GhveJ5NrrBRcwJgLxQOQY&agent=1",
-          "description": "Automatizacion Python",
+          "resource": "https://alfrexo95.github.io/ucash-autonomous-agent/.well-known/x402",
           "mimeType": "application/json"
         }
       ]
