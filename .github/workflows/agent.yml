@@ -1,64 +1,60 @@
-name: Predator U.CASH Agent Elite
+name: U.CASH Elite Open-Source AI Agent 24/7
 
 on:
+  schedule:
+    - cron: '0 */6 * * *'
   workflow_dispatch:
-    inputs:
-      mode:
-        type: choice
-        description: Install heavy AI libraries?
-        options:
-          - light
-          - heavy_ai
-        default: light
-  push:
-    branches:
-      - master
-    paths:
-      - agent.py
-      - setup_ucash.py
-      - requirements*.txt
-      - .github/workflows/**
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: ucash-agent
+  cancel-in-progress: false
 
 jobs:
-  checks:
+  run-ucash:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 350
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: pip
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
 
-      - name: Install base dependencies
-        run: pip install -r requirements.txt
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-qwen2.5-1.5b-v1
+          restore-keys: |
+            hf-
 
-      - name: Compile Python
-        run: python -m py_compile agent.py setup_ucash.py
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
 
-      - name: Install CPU PyTorch
-        if: ${{ github.event.inputs.mode == 'heavy_ai' }}
-        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
-
-      - name: Install AI dependencies
-        if: ${{ github.event.inputs.mode == 'heavy_ai' }}
-        run: pip install -r requirements-heavy.txt
-
-      - name: Check AI imports
-        if: ${{ github.event.inputs.mode == 'heavy_ai' }}
-        run: python -c "import torch, transformers; print(torch.__version__, transformers.__version__)"
-
-      - name: Check U.CASH secret
+      - name: Run Open-Source AI Agent
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
+          RUN_HOURS: '5.4'
+          POLL_SECONDS: '120'
+        run: python3 agent.py
+
+      - name: Save state and deliveries
+        if: always()
         run: |
-          if [ -n "$UCASH_API_KEY" ]; then
-            echo "U.CASH secret configured"
-          else
-            echo "U.CASH secret absent; authenticated checks skipped"
+          git config user.name "ucash-agent"
+          git config user.email "ucash-agent@users.noreply.github.com"
+          git add ucash_state.json deliveries/ || true
+          if ! git diff --cached --quiet; then
+            git commit -m "state: update ledger and deliveries [skip ci]"
+            git push
           fi
