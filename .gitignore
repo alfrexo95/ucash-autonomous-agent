@@ -8,3 +8,9 @@ published_services.json
 *.bak
 *.log
 .DS_Store
+cache/
+inbox/
+*.tmp
+deliveries/*.decrypted.md
+multimodal/cache/
+multimodal/inbox/
