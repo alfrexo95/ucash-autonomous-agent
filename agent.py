@@ -113,7 +113,14 @@ def process(agent, state):
             record_processed(state, tx_id, service, tx.get("amount_fiat", 0))
             save_state(STATE_FILE, state)
             log(f"[{tx_id}] Entregado y CIFRADO en {path}")
-        except Exception: log(traceback.format_exc())
+        except Exception:
+            err = traceback.format_exc()
+            log(err)
+            try:
+                from self_repair import record_failure
+                record_failure("agent.py", service, err)
+            except Exception:
+                pass
 
 if __name__ == "__main__":
     log("Iniciando ciclo del agente...")

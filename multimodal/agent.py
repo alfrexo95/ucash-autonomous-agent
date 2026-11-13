@@ -154,7 +154,14 @@ def process(agent, state):
             record_processed(state, tx_id, service, tx.get("amount_fiat", 0))
             save_state(STATE_FILE, state)
             print(f"[{tx_id}] Entregado y CIFRADO en {path}", flush=True)
-        except Exception: print(traceback.format_exc())
+        except Exception:
+            err = traceback.format_exc()
+            print(err, flush=True)
+            try:
+                from self_repair import record_failure
+                record_failure("multimodal/agent.py", service, err)
+            except Exception:
+                pass
 
 if __name__ == "__main__":
     print("Iniciando Multimodal Agent...")
