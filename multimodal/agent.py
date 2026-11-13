@@ -158,6 +158,23 @@ def process(agent, state):
 
 if __name__ == "__main__":
     print("Iniciando Multimodal Agent...")
-    agent = AgentsUCash(api_key=API_KEY); state = load_state(STATE_FILE)
-    process(agent, state); save_state(STATE_FILE, state)
+    agent = AgentsUCash(api_key=API_KEY)
+    state = load_state(STATE_FILE)
+    
+    run_hours = float(os.environ.get("RUN_HOURS", "0.23"))
+    poll_seconds = int(os.environ.get("POLL_SECONDS", "60"))
+    
+    deadline = time.time() + run_hours * 3600.0
+    print(f"Ventana activa: {run_hours}h (poll cada {poll_seconds}s)")
+    
+    try:
+        while True:
+            process(agent, state)
+            if time.time() >= deadline:
+                break
+            time.sleep(poll_seconds)
+    except KeyboardInterrupt:
+        print("Interrumpido por el usuario.")
+        
+    save_state(STATE_FILE, state)
     print("Ciclo finalizado.")
