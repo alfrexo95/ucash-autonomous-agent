@@ -33,6 +33,8 @@ jobs:
         working-directory: ./multimodal
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
+          RUN_HOURS: '0.23'
+          POLL_SECONDS: '60'
         run: python3 agent.py
       - name: Commit deliveries and state
         if: always()
