@@ -1,7 +1,7 @@
 name: U.CASH Elite Agent
 on:
 # schedule:
-    - cron: '*/15 * * * *'
+    # - cron: '*/15 * * * *'
   workflow_dispatch:
 permissions:
   contents: write

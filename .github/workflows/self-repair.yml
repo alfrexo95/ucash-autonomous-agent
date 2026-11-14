@@ -1,7 +1,7 @@
 name: Self-Repair
 on:
 # schedule:
-    - cron: '0 3 * * *' # 3 AM todos los días (evita quemar la cuota gratuita)
+    # - cron: '0 3 * * *' # 3 AM todos los días (evita quemar la cuota gratuita)
   push:
     branches: ['self-repair/**']
   workflow_dispatch:
