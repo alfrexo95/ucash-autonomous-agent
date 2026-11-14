@@ -1,7 +1,7 @@
 name: Multimodal Agent
 on:
   workflow_dispatch:
-  schedule:
+# schedule:
     - cron: '0 */2 * * *'
 permissions:
   contents: write
