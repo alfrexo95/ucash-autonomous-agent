@@ -48,7 +48,7 @@ def delivery_name(tx_id, claim_code):
 
 # ---- Estado con fusion atomica ----
 def default_state():
-    return {"resources": {}, "processed_tx": [], "needs_claim": {}, "earnings_usd": 0.0, "history": []}
+    return {"resources": {}, "processed_tx": [], "needs_claim": {}, "in_progress": {}, "earnings_usd": 0.0, "history": []}
 
 def load_state(path):
     p = Path(path); state = {}
@@ -59,6 +59,8 @@ def load_state(path):
     if isinstance(state, dict): base.update(state)
     if isinstance(base.get("processed_tx"), list):
         base["processed_tx"] = [str(x) for x in base["processed_tx"]]
+    if not isinstance(base.get("in_progress"), dict):
+        base["in_progress"] = {}
     return base
 
 def _dedupe_history(entries):
@@ -73,7 +75,10 @@ def merge_states(base, other):
     merged = default_state()
     merged["resources"] = {**base.get("resources", {}), **other.get("resources", {})}
     merged["processed_tx"] = list(set(map(str, base.get("processed_tx", []))) | set(map(str, other.get("processed_tx", []))))
-    merged["needs_claim"] = {**base.get("needs_claim", {}), **other.get("needs_claim", {})}
+    # needs_claim: las eliminaciones en `other` tienen prioridad para evitar reprocesos.
+    kept = {k: v for k, v in base.get("needs_claim", {}).items() if k in other.get("needs_claim", {})}
+    merged["needs_claim"] = {**kept, **other.get("needs_claim", {})}
+    merged["in_progress"] = {**base.get("in_progress", {}), **other.get("in_progress", {})}
     merged["history"] = _dedupe_history((base.get("history") or []) + (other.get("history") or []))
     merged["earnings_usd"] = max(float(base.get("earnings_usd", 0) or 0),
                                  float(other.get("earnings_usd", 0) or 0),
@@ -127,6 +132,9 @@ def robust_download(url, expected_type="image"):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; PredatorAgent/2.0)"})
             with urllib.request.urlopen(req, timeout=20) as r:
+                content_type = (r.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+                if content_type.startswith("text/html"):
+                    raise ValueError("La URL no devuelve un archivo descargable valido.")
                 content = r.read(_MAX_DOWNLOAD + 1)
                 if len(content) > _MAX_DOWNLOAD: raise ValueError("Archivo mayor a 10MB, rechazado.")
                 with open(filename, "wb") as f: f.write(content)
@@ -147,7 +155,7 @@ def validate_python(code):
 _SOLIDITY_RULES = [
     (r"\btx\.origin\b", "HIGH", "Uso de `tx.origin` para autenticacion: vulnerable a phishing."),
     (r"\bdelegatecall\b", "HIGH", "Uso de `delegatecall`: ejecuta codigo externo con permisos del contrato."),
-    (r"\bselfdestruct\b", "HIGH", "Uso de `selfdestruct`: destruccion irreversible del contrato."),
+    (r"\bselfdestruct\b", "MED", "Uso de `selfdestruct`: destruccion irreversible del contrato."),
     (r"\.call\s*\{", "MED", "Llamada externa de bajo nivel (`.call{}`): verifica valor de retorno y reentrancia."),
     (r"\bassembly\b", "MED", "Bloque `assembly`: evita las protecciones del compilador."),
     (r"\bextcodesize\b", "MED", "Uso de `extcodesize` para detectar contratos: evitable con EOA."),
@@ -202,7 +210,6 @@ def analyze_solidity(code):
         if re.search(r"\bpayable\b", header) and not re.search(r"nonReentrant|onlyOwner|require\s*\(", body):
             issues.append(("LOW", f"Funcion payable `{name}` sin control de acceso/reentrancia visible."))
     ext_call = re.compile(r"\.(call|transfer|send)\s*[\({]")
-    # Regex ampliado: acepta x[...] = o x = tras un punto y coma, evita declaraciones uint
     state_write = re.compile(r"(?<![.a-zA-Z0-9_])(?:\w+\s*\[[^\]]*\]|\w+)\s*(?:[-+*/%]?)=(?!=)")
     for name, header, body in _extract_functions(cleaned):
         m1 = ext_call.search(body)

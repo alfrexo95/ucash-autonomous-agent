@@ -79,6 +79,7 @@ def _to_float(v, default=0.0):
 def record_processed(state, tx_id, service, amount):
     state["processed_tx"].append(str(tx_id))
     state["needs_claim"].pop(str(tx_id), None)
+    state.get("in_progress", {}).pop(str(tx_id), None)
     state["history"].append({"tx_id": str(tx_id), "service": service,
                              "amount": round(_to_float(amount), 6),
                              "ts": time.strftime("%Y-%m-%dT%H:%M:%S")})
@@ -106,7 +107,12 @@ def process(agent, state):
             save_state(STATE_FILE, state)
             log(f"[{tx_id}] Sin [Claim: ...], guardado en needs_claim.")
             continue
+        if service not in HANDLERS:
+            log(f"[{tx_id}] Servicio desconocido o no registrado: {service}")
+            continue
         log(f"[{tx_id}] Procesando '{service}'...")
+        state.setdefault("in_progress", {})[tx_id] = service
+        save_state(STATE_FILE, state)
         try:
             output = HANDLERS[service](order)
             path = deliver_encrypted(tx_id, service, output, claim_code)
@@ -114,6 +120,8 @@ def process(agent, state):
             save_state(STATE_FILE, state)
             log(f"[{tx_id}] Entregado y CIFRADO en {path}")
         except Exception:
+            state.get("in_progress", {}).pop(tx_id, None)
+            save_state(STATE_FILE, state)
             err = traceback.format_exc()
             log(err)
             try:
@@ -126,6 +134,10 @@ if __name__ == "__main__":
     log("Iniciando ciclo del agente...")
     agent = AgentsUCash(api_key=API_KEY)
     state = load_state(STATE_FILE)
+    if state.get("in_progress"):
+        log(f"Recuperando {len(state['in_progress'])} transaccion(es) marcadas en proceso.")
+        state["in_progress"] = {}
+        save_state(STATE_FILE, state)
     deadline = time.time() + RUN_HOURS * 3600.0
     log(f"Ventana activa: {RUN_HOURS}h (poll cada {POLL_SECONDS}s)")
     try:
