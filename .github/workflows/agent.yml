@@ -35,12 +35,12 @@ jobs:
           POLL_SECONDS: '60'
         run: python3 agent.py
       - name: Register U.CASH Agent in Predator Hub (optional)
-        if: ${{ secrets.INFRA_HUB_TOKEN != '' }}
         continue-on-error: true
         env:
           HUB_TOKEN: ${{ secrets.INFRA_HUB_TOKEN }}
           HUB_URL: https://x402-api-wigc.onrender.com
         run: |
+          if [ -z "${HUB_TOKEN:-}" ]; then echo "Hub registration skipped: token not configured"; exit 0; fi
           set -euo pipefail
           curl --silent --show-error --fail --max-time 15 \
             -H "Authorization: Bearer $HUB_TOKEN" -H "Content-Type: application/json" \
