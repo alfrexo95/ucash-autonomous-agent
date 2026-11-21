@@ -36,6 +36,22 @@ jobs:
           RUN_HOURS: '0.23'
           POLL_SECONDS: '60'
         run: python3 agent.py
+      - name: Register U.CASH Multimodal in Predator Hub (optional)
+        if: ${{ secrets.INFRA_HUB_TOKEN != '' }}
+        continue-on-error: true
+        env:
+          HUB_TOKEN: ${{ secrets.INFRA_HUB_TOKEN }}
+          HUB_URL: https://x402-api-wigc.onrender.com
+        run: |
+          set -euo pipefail
+          curl --silent --show-error --fail --max-time 15 \
+            -H "Authorization: Bearer $HUB_TOKEN" -H "Content-Type: application/json" \
+            -d '{"agent_id":"ucash-multimodal-agent","platform":"github-actions","capabilities":["multimodal.analyze","vision","media"]}' \
+            "$HUB_URL/infra/agents/register"
+          curl --silent --show-error --fail --max-time 15 \
+            -H "Authorization: Bearer $HUB_TOKEN" -H "Content-Type: application/json" \
+            -d '{}' "$HUB_URL/infra/agents/ucash-multimodal-agent/heartbeat"
+
       - name: Commit deliveries and state
         if: always()
         run: |
