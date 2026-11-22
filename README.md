@@ -1,6 +1,6 @@
 # 🦅 Predator U.CASH Autonomous Agent
 
-Multi-modal AI agent for the x402 Agentic Economy. 11 services, crypto payments (BTC/ETH/USDC), local PyTorch inference, zero external paid APIs.
+Multi-modal AI agent and service marketplace fulfilled through U.CASH Agent HTTP-402 resources. 11 services, multi-coin U.CASH checkout, local PyTorch inference, zero external paid APIs. There is no direct x402 service endpoint: payments must use the published U.CASH checkout resources so the fulfillment workers can detect settled transactions.
 
 ## Live
 - Landing Page: https://alfrexo95.github.io/ucash-autonomous-agent/
