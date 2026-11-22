@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Nucleo compartido del Predator Agent (solo stdlib)."""
-import hashlib, ipaddress, json, os, re, socket, time
+import hashlib, hmac, ipaddress, json, os, re, socket, time
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -18,34 +18,71 @@ def get_cache(key):
 def set_cache(key, data):
     (CACHE_DIR / f"{key}.json").write_text(json.dumps(data, indent=2, ensure_ascii=False))
 
-# ---- Cifrado de entregas (stdlib puro) ----
-_CIPHER_MAGIC = b"UCASH1"
+# ---- Cifrado de entregas autenticado (stdlib puro) ----
+_CIPHER_MAGIC = b"UCASH1"  # legacy format; retained for backward-compatible decrypt
+_CIPHER_MAGIC_V2 = b"UCASH2"
+_CIPHER_TAG_LEN = 32
+
 
 def _keystream(key, nonce, length):
+    """Legacy UCASH1 stream generator; used only to decrypt old files."""
     out = bytearray(); counter = 0
     while len(out) < length:
         out.extend(hashlib.sha256(key + nonce + counter.to_bytes(8, "big")).digest()); counter += 1
     return bytes(out[:length])
 
+
+def _keystream_v2(key, nonce, length):
+    out = bytearray(); counter = 0
+    while len(out) < length:
+        out.extend(hmac.new(key, nonce + counter.to_bytes(8, "big"), hashlib.sha256).digest())
+        counter += 1
+    return bytes(out[:length])
+
+
 def encrypt_bytes(data, key):
     nonce = os.urandom(16)
-    ks = _keystream(key, nonce, len(data))
-    return _CIPHER_MAGIC + nonce + bytes(a ^ b for a, b in zip(data, ks))
+    enc_key = hmac.new(key, b"UCASH2|enc", hashlib.sha256).digest()
+    mac_key = hmac.new(key, b"UCASH2|mac", hashlib.sha256).digest()
+    ks = _keystream_v2(enc_key, nonce, len(data))
+    ciphertext = bytes(a ^ b for a, b in zip(data, ks))
+    header = _CIPHER_MAGIC_V2 + nonce
+    tag = hmac.new(mac_key, header + ciphertext, hashlib.sha256).digest()
+    return header + ciphertext + tag
+
 
 def decrypt_bytes(blob, key):
-    if not blob.startswith(_CIPHER_MAGIC):
-        raise ValueError("Archivo de entrega invalido o ya descifrado.")
-    nonce = blob[len(_CIPHER_MAGIC):len(_CIPHER_MAGIC) + 16]
-    body = blob[len(_CIPHER_MAGIC) + 16:]
-    ks = _keystream(key, nonce, len(body))
-    return bytes(a ^ b for a, b in zip(body, ks))
+    if blob.startswith(_CIPHER_MAGIC_V2):
+        header_len = len(_CIPHER_MAGIC_V2) + 16
+        if len(blob) < header_len + _CIPHER_TAG_LEN:
+            raise ValueError("Entrega UCASH2 truncada.")
+        nonce = blob[len(_CIPHER_MAGIC_V2):header_len]
+        ciphertext = blob[header_len:-_CIPHER_TAG_LEN]
+        tag = blob[-_CIPHER_TAG_LEN:]
+        enc_key = hmac.new(key, b"UCASH2|enc", hashlib.sha256).digest()
+        mac_key = hmac.new(key, b"UCASH2|mac", hashlib.sha256).digest()
+        expected = hmac.new(mac_key, blob[:header_len] + ciphertext, hashlib.sha256).digest()
+        if not hmac.compare_digest(tag, expected):
+            raise ValueError("Entrega alterada o clave de Claim incorrecta.")
+        ks = _keystream_v2(enc_key, nonce, len(ciphertext))
+        return bytes(a ^ b for a, b in zip(ciphertext, ks))
+    if blob.startswith(_CIPHER_MAGIC):
+        nonce = blob[len(_CIPHER_MAGIC):len(_CIPHER_MAGIC) + 16]
+        body = blob[len(_CIPHER_MAGIC) + 16:]
+        ks = _keystream(key, nonce, len(body))
+        return bytes(a ^ b for a, b in zip(body, ks))
+    raise ValueError("Archivo de entrega invalido o ya descifrado.")
 
-def derive_key(tx_id, claim_code):
-    return hashlib.sha256(f"{tx_id}-{claim_code}".encode()).digest()
 
-def delivery_name(tx_id, claim_code):
-    return hashlib.sha256(f"{tx_id}-{claim_code}".encode()).hexdigest()[:16] + ".enc"
+def strip_claim_code(text):
+    return re.sub(r"\\[(?:Claim|Code|Key):\\s*[a-zA-Z0-9_-]{4,32}\\]", "", str(text), flags=re.I).strip()
 
+
+def validate_delivery_output(output):
+    if not isinstance(output, str) or not output.strip():
+        return False
+    text = output.strip()
+    return not re.match(r"^(?:error|exception|failed|http error)\\s*[:\\-]", text, re.I)
 # ---- Estado con fusion atomica ----
 def default_state():
     return {"resources": {}, "processed_tx": [], "needs_claim": {}, "in_progress": {}, "earnings_usd": 0.0, "history": []}
