@@ -1,7 +1,7 @@
 name: U.CASH Elite Agent
 on:
-# schedule:
-    # - cron: '*/15 * * * *'
+  schedule:
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 permissions:
   contents: write
@@ -11,7 +11,7 @@ concurrency:
 jobs:
   run-ucash:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,10 +28,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements.txt
+      - name: Register U.CASH agent with Predator Hub before processing
+        continue-on-error: true
+        env:
+          HUB_TOKEN: \${{ secrets.INFRA_HUB_TOKEN }}
+          HUB_URL: https://x402-api-wigc.onrender.com
+        run: |
+          if [ -z "\${HUB_TOKEN:-}" ]; then echo "Hub registration skipped: token not configured"; exit 0; fi
+          set -euo pipefail
+          capabilities='["ucash.agent","marketplace","delivery","prompt_engineering","code_audit","data_research"]'
+          curl --silent --show-error --fail --max-time 15 \
+            -H "Authorization: Bearer $HUB_TOKEN" -H "Content-Type: application/json" \
+            -d "{\"agent_id\":\"ucash-autonomous-agent\",\"platform\":\"github-actions\",\"capabilities\":$capabilities}" \
+            "$HUB_URL/infra/agents/register"
+          curl --silent --show-error --fail --max-time 15 \
+            -H "Authorization: Bearer $HUB_TOKEN" -H "Content-Type: application/json" \
+            -d '{}' "$HUB_URL/infra/agents/ucash-autonomous-agent/heartbeat"
       - name: Run Agent
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
-          RUN_HOURS: '0.23'
+          RUN_HOURS: '0.20'
           POLL_SECONDS: '60'
         run: python3 agent.py
       - name: Register U.CASH Agent in Predator Hub (optional)
@@ -44,7 +60,7 @@ jobs:
           set -euo pipefail
           curl --silent --show-error --fail --max-time 15 \
             -H "Authorization: Bearer $HUB_TOKEN" -H "Content-Type: application/json" \
-            -d '{"agent_id":"ucash-autonomous-agent","platform":"github-actions","capabilities":["ucash.agent","marketplace","delivery"]}' \
+            -d '{"agent_id":"ucash-autonomous-agent","platform":"github-actions","capabilities":["ucash.agent","marketplace","delivery","prompt_engineering","code_audit","data_research"]}' \
             "$HUB_URL/infra/agents/register"
           curl --silent --show-error --fail --max-time 15 \
             -H "Authorization: Bearer $HUB_TOKEN" -H "Content-Type: application/json" \
