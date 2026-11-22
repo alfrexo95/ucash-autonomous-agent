@@ -4,4 +4,4 @@ accelerate
 pillow
 opencv-python-headless
 pytesseract
-agents-u-cash
+agents-u-cash==0.9.0
