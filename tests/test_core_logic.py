@@ -29,7 +29,8 @@ class CoreLogicTests(unittest.TestCase):
         self.assertEqual(strip_claim_code(text), "audit this source")
 
     def test_failed_service_output_is_not_marked_as_success(self):
-        self.assertFalse(validate_delivery_output("Error: model unavailable"))\n        self.assertFalse(validate_delivery_output("Error OCR: unsupported image"))
+        self.assertFalse(validate_delivery_output("Error: model unavailable"))
+        self.assertFalse(validate_delivery_output("Error OCR: unsupported image"))
         self.assertFalse(validate_delivery_output(""))
         self.assertFalse(validate_delivery_output("   "))
         self.assertTrue(validate_delivery_output("## Report\nFindings: none"))
@@ -42,7 +43,7 @@ class CoreLogicTests(unittest.TestCase):
         self.assertEqual(len(state["history"]), 1)
         self.assertEqual(state["earnings_usd"], 5.0)
         self.assertNotIn("tx-4", state["needs_claim"])
-        self.assertNotIn("tx-4", state["in_progress")
+        self.assertNotIn("tx-4", state["in_progress"])
 
 
 if __name__ == "__main__":
