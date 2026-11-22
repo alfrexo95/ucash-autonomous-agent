@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
-import hashlib\nfrom core_logic import encrypt_bytes, decrypt_bytes, derive_key, delivery_name, strip_claim_code, validate_delivery_output, record_processed_state, _keystream, _CIPHER_MAGIC
+import hashlib
+from core_logic import encrypt_bytes, decrypt_bytes, derive_key, delivery_name, strip_claim_code, validate_delivery_output, record_processed_state, _keystream, _CIPHER_MAGIC
 
 
 class CoreLogicTests(unittest.TestCase):
