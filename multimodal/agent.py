@@ -5,7 +5,7 @@ from pathlib import Path
 from agents_u_cash import AgentsUCash
 sys.path.append('..')
 from core_logic import (analyze_solidity, delivery_name, derive_key, encrypt_bytes,
-                        robust_download, load_state, save_state)
+                        robust_download, load_state, save_state, decrypt_bytes, record_processed_state, strip_claim_code, validate_delivery_output)
 
 API_KEY = os.environ.get("UCASH_API_KEY", "")
 TEXT_MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-Coder-3B-Instruct")
@@ -119,41 +119,71 @@ def _to_float(v, default=0.0):
     except (TypeError, ValueError): return default
 
 def record_processed(state, tx_id, service, amount):
-    state["processed_tx"].append(str(tx_id))
-    state["needs_claim"].pop(str(tx_id), None)
-    state["history"].append({"tx_id": str(tx_id), "service": service,
-                             "amount": round(_to_float(amount), 6),
-                             "ts": time.strftime("%Y-%m-%dT%H:%M:%S")})
-    state["earnings_usd"] = round(sum(_to_float(h.get("amount")) for h in state["history"]), 6)
+    return record_processed_state(state, tx_id, service, amount)
+
+
+def _recover_existing_delivery(tx_id, claim_code):
+    path = DELIVERIES / delivery_name(tx_id, claim_code)
+    if not path.exists():
+        return False
+    try:
+        content = decrypt_bytes(path.read_bytes(), derive_key(tx_id, claim_code)).decode("utf-8", errors="replace")
+        report = content.split("\n\n", 1)[-1]
+        return validate_delivery_output(report)
+    except Exception:
+        return False
+
 
 def process(agent, state):
     txs = agent.get_transactions(status="C", limit=50)
     resp = txs.get("response", txs) if isinstance(txs, dict) else txs
     tx_list = resp.get("transactions", []) if isinstance(resp, dict) else resp
+    if not isinstance(tx_list, list):
+        print("U.CASH response has no transaction list; skip cycle.", flush=True)
+        return
     for tx in tx_list:
-        tx_id = str(tx.get("id"))
-        if tx_id in state["processed_tx"]: continue
+        if not isinstance(tx, dict) or tx.get("id") is None:
+            continue
+        tx_id = str(tx["id"])
+        if tx_id in set(map(str, state.get("processed_tx", []))):
+            continue
         res_id = tx.get("res_id")
-        service = next((k for k, v in state["resources"].items() if v["res_id"] == res_id), None)
-        if not service or service not in HANDLERS: continue
+        resources = state.get("resources") or {}
+        service = next((k for k, v in resources.items()
+                       if isinstance(v, dict) and str(v.get("res_id")) == str(res_id)), None)
+        if not service or service not in HANDLERS:
+            continue
         order = (tx.get("description") or "").strip()
         cf = tx.get("custom_fields", {})
         if isinstance(cf, dict):
-            for v in cf.values():
-                if isinstance(v, str) and len(v.strip()) > len(order): order = v.strip()
-        if not order: continue
+            for value in cf.values():
+                if isinstance(value, str) and len(value.strip()) > len(order):
+                    order = value.strip()
+        if not order:
+            continue
         claim_code = extract_claim_code(order)
         if not claim_code:
             state.setdefault("needs_claim", {})[tx_id] = service
             save_state(STATE_FILE, state)
-            print(f"[{tx_id}] Sin [Claim: ...]: pendiente.", flush=True)
+            print(f"[{tx_id}] Missing Claim code; pending.", flush=True)
+            continue
+        clean_order = strip_claim_code(order)
+        if not clean_order:
+            print(f"[{tx_id}] Payment settled but order payload empty; manual review.", flush=True)
+            continue
+        if _recover_existing_delivery(tx_id, claim_code):
+            record_processed(state, tx_id, service, tx.get("amount_fiat", 0))
+            save_state(STATE_FILE, state)
+            print(f"[{tx_id}] Recovered validated delivery; no duplicate inference.", flush=True)
             continue
         try:
-            output = HANDLERS[service](order)
+            output = HANDLERS[service](clean_order)
+            if not validate_delivery_output(output):
+                raise RuntimeError("Handler returned empty output or an error message.")
             path = deliver_encrypted(tx_id, service, output, claim_code)
             record_processed(state, tx_id, service, tx.get("amount_fiat", 0))
             save_state(STATE_FILE, state)
-            print(f"[{tx_id}] Entregado y CIFRADO en {path}", flush=True)
+            print(f"[{tx_id}] Encrypted and validated delivery: {path}", flush=True)
         except Exception:
             err = traceback.format_exc()
             print(err, flush=True)
