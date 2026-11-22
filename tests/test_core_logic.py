@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
-from core_logic import encrypt_bytes, decrypt_bytes, derive_key, strip_claim_code, validate_delivery_output, record_processed_state, _keystream, _CIPHER_MAGIC
+import hashlib\nfrom core_logic import encrypt_bytes, decrypt_bytes, derive_key, delivery_name, strip_claim_code, validate_delivery_output, record_processed_state, _keystream, _CIPHER_MAGIC
 
 
 class CoreLogicTests(unittest.TestCase):
@@ -44,6 +44,12 @@ class CoreLogicTests(unittest.TestCase):
         self.assertEqual(state["earnings_usd"], 5.0)
         self.assertNotIn("tx-4", state["needs_claim"])
         self.assertNotIn("tx-4", state["in_progress"])
+
+    def test_delivery_key_and_filename_helpers_are_stable(self):
+        expected = hashlib.sha256(b"tx-5-claim-code").digest()
+        self.assertEqual(derive_key("tx-5", "claim-code"), expected)
+        expected_name = hashlib.sha256(b"tx-5-claim-code").hexdigest()[:16] + ".enc"
+        self.assertEqual(delivery_name("tx-5", "claim-code"), expected_name)
 
 
 if __name__ == "__main__":
