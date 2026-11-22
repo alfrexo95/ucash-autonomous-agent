@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
-from core_logic import encrypt_bytes, decrypt_bytes, derive_key, strip_claim_code, validate_delivery_output, _keystream, _CIPHER_MAGIC
+from core_logic import encrypt_bytes, decrypt_bytes, derive_key, strip_claim_code, validate_delivery_output, record_processed_state, _keystream, _CIPHER_MAGIC
 
 
 class CoreLogicTests(unittest.TestCase):
@@ -29,10 +29,20 @@ class CoreLogicTests(unittest.TestCase):
         self.assertEqual(strip_claim_code(text), "audit this source")
 
     def test_failed_service_output_is_not_marked_as_success(self):
-        self.assertFalse(validate_delivery_output("Error: model unavailable"))
+        self.assertFalse(validate_delivery_output("Error: model unavailable"))\n        self.assertFalse(validate_delivery_output("Error OCR: unsupported image"))
         self.assertFalse(validate_delivery_output(""))
         self.assertFalse(validate_delivery_output("   "))
         self.assertTrue(validate_delivery_output("## Report\nFindings: none"))
+
+    def test_processed_transaction_recording_is_idempotent(self):
+        state = {"processed_tx": [], "history": [], "needs_claim": {"tx-4": "code_audit"}, "in_progress": {"tx-4": "code_audit"}}
+        self.assertTrue(record_processed_state(state, "tx-4", "code_audit", 5))
+        self.assertFalse(record_processed_state(state, "tx-4", "code_audit", 5))
+        self.assertEqual(state["processed_tx"], ["tx-4"])
+        self.assertEqual(len(state["history"]), 1)
+        self.assertEqual(state["earnings_usd"], 5.0)
+        self.assertNotIn("tx-4", state["needs_claim"])
+        self.assertNotIn("tx-4", state["in_progress")
 
 
 if __name__ == "__main__":
