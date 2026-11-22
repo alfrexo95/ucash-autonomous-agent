@@ -82,7 +82,8 @@ def validate_delivery_output(output):
     if not isinstance(output, str) or not output.strip():
         return False
     text = output.strip()
-    return not re.match(r"^(?:error|exception|failed|http error)\s*[:\-]", text, re.I)
+    return not re.match(r"^(?:error|exception|failed|http error)\b", text, re.I)
+
 
 # ---- Estado con fusion atomica ----
 def default_state():
