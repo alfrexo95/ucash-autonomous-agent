@@ -75,14 +75,15 @@ def decrypt_bytes(blob, key):
 
 
 def strip_claim_code(text):
-    return re.sub(r"\\[(?:Claim|Code|Key):\\s*[a-zA-Z0-9_-]{4,32}\\]", "", str(text), flags=re.I).strip()
+    return re.sub(r"\[(?:Claim|Code|Key):\s*[a-zA-Z0-9_-]{4,32}\]", "", str(text), flags=re.I).strip()
 
 
 def validate_delivery_output(output):
     if not isinstance(output, str) or not output.strip():
         return False
     text = output.strip()
-    return not re.match(r"^(?:error|exception|failed|http error)\\s*[:\\-]", text, re.I)
+    return not re.match(r"^(?:error|exception|failed|http error)\s*[:\-]", text, re.I)
+
 # ---- Estado con fusion atomica ----
 def default_state():
     return {"resources": {}, "processed_tx": [], "needs_claim": {}, "in_progress": {}, "earnings_usd": 0.0, "history": []}
