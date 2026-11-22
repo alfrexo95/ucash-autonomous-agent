@@ -85,6 +85,44 @@ def validate_delivery_output(output):
     return not re.match(r"^(?:error|exception|failed|http error)\b", text, re.I)
 
 
+def derive_key(tx_id, claim_code):
+    return hashlib.sha256(f"{tx_id}-{claim_code}".encode()).digest()
+
+
+def delivery_name(tx_id, claim_code):
+    return hashlib.sha256(f"{tx_id}-{claim_code}".encode()).hexdigest()[:16] + ".enc"
+
+
+def record_processed_state(state, tx_id, service, amount):
+    tx_id = str(tx_id)
+    processed = state.setdefault("processed_tx", [])
+    if tx_id in set(map(str, processed)):
+        return False
+    processed.append(tx_id)
+    state.setdefault("needs_claim", {}).pop(tx_id, None)
+    state.setdefault("in_progress", {}).pop(tx_id, None)
+    history = state.setdefault("history", [])
+    if not any(isinstance(item, dict) and str(item.get("tx_id")) == tx_id for item in history):
+        try:
+            numeric_amount = float(amount)
+        except (TypeError, ValueError):
+            numeric_amount = 0.0
+        history.append({
+            "tx_id": tx_id,
+            "service": service,
+            "amount": round(numeric_amount, 6),
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        })
+    total = 0.0
+    for item in history:
+        try:
+            total += float(item.get("amount", 0) or 0)
+        except (TypeError, ValueError):
+            pass
+    state["earnings_usd"] = round(total, 6)
+    return True
+
+
 # ---- Estado con fusion atomica ----
 def default_state():
     return {"resources": {}, "processed_tx": [], "needs_claim": {}, "in_progress": {}, "earnings_usd": 0.0, "history": []}
