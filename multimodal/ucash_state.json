@@ -35,6 +35,7 @@
   },
   "processed_tx": [],
   "needs_claim": {},
+  "in_progress": {},
   "earnings_usd": 0.0,
   "history": []
 }
