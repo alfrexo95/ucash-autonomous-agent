@@ -45,6 +45,17 @@ class AgentRepositoryTests(unittest.TestCase):
     def test_direct_x402_manifest_is_not_published(self):
         self.assertFalse((ROOT / ".well-known/x402").exists())
 
+    def test_marketplace_workers_do_not_advertise_hub_task_execution_capabilities(self):
+        main = (ROOT / ".github/workflows/agent.yml").read_text()
+        multi = (ROOT / ".github/workflows/multimodal.yml").read_text()
+        self.assertIn('"ucash.marketplace.fulfillment"', main)
+        self.assertIn('"ucash.marketplace.fulfillment"', multi)
+        for skill in ("prompt_engineering", "code_audit", "data_research"):
+            self.assertNotIn(f'"{skill}"', main)
+        for skill in ("ocr_extractor", "sentiment_analyzer", "image_classifier", "audio_transcriber",
+                      "object_detector", "smart_contract_auditor", "text_translator", "document_summarizer"):
+            self.assertNotIn(f'"{skill}"', multi)
+
 
 if __name__ == "__main__":
     unittest.main()
