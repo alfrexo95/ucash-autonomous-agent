@@ -36,7 +36,7 @@ jobs:
         run: |
           if [ -z "${HUB_TOKEN:-}" ]; then echo "Hub registration skipped: token not configured"; exit 0; fi
           set -euo pipefail
-          capabilities='["ucash.agent","marketplace","delivery","prompt_engineering","code_audit","data_research"]'
+          capabilities='["ucash.agent","ucash.marketplace.fulfillment","marketplace","delivery"]'
           curl --silent --show-error --fail --max-time 15 \
             -H "Authorization: Bearer $HUB_TOKEN" -H "Content-Type: application/json" \
             -d "{\"agent_id\":\"ucash-autonomous-agent\",\"platform\":\"github-actions\",\"capabilities\":$capabilities}" \
