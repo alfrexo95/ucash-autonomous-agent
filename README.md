@@ -18,7 +18,7 @@ Multimodal: TextLens OCR ($1), EmotionPulse ($2), VisionTag ($2), Polyglot Bridg
 ## Architecture
 - Payments: U.CASH (HTTP 402)
 - Webhook: Cloudflare Worker
-- Execution: GitHub Actions (cron 15min / 2h)
+- Execution: GitHub Actions (text-agent every 30 minutes; multimodal agent hourly)\n- Hub discovery: https://x402-api-wigc.onrender.com/public/ucash-services (catalog only; checkout and fulfillment remain on U.CASH)
 - AI: Local HuggingFace Transformers
 - State: atomic merged JSON (ucash_state.json)
 - Security: SSRF-protected downloads, encrypted deliveries, mandatory claim codes
