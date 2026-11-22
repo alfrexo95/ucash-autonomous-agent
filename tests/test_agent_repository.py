@@ -38,7 +38,7 @@ class AgentRepositoryTests(unittest.TestCase):
         main = (ROOT / ".github/workflows/agent.yml").read_text()
         multi = (ROOT / ".github/workflows/multimodal.yml").read_text()
         self.assertIn("cron: '*/30 * * * *'", main)
-        self.assertIn("cron: '0 */2 * * *'", multi)
+        self.assertIn("cron: '0 * * * *'", multi)
         self.assertLess(main.index("Register U.CASH agent with Predator Hub before processing"), main.index("Run Agent"))
         self.assertLess(multi.index("Register U.CASH multimodal agent with Predator Hub before processing"), multi.index("Run Multimodal Agent"))
 
