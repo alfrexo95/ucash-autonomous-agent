@@ -49,7 +49,7 @@ jobs:
         working-directory: ./multimodal
         env:
           UCASH_API_KEY: ${{ secrets.UCASH_API_KEY }}
-          RUN_HOURS: '0.20'
+          RUN_HOURS: '0.35'
           POLL_SECONDS: '60'
         run: python3 agent.py
       - name: Register U.CASH Multimodal in Predator Hub (optional)
